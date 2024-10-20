@@ -1,11 +1,11 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import time
+from qwen_3b_llm import *
+from prompt import *
+import json
 
-model_name = "Qwen/Qwen2.5-3B-Instruct"
+with open("personal_information\lin\information.json", "r", encoding="utf-8") as f:
+    person_information = json.load(f)
 
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype="auto",
-    device_map="auto"
-)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+daily_schedule, times = make_design(person_information, create_dialogue)
+
+print(daily_schedule)
+print("執行時間:", times)
