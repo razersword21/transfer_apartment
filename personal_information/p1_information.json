@@ -22,33 +22,33 @@
   },
   {
    "time": "12:00",
-   "action": "午餐時間"
+   "action": "午餐"
   },
   {
-   "time": "13:00",
-   "action": "繼續工作"
-  },
-  {
-   "time": "17:30",
-   "action": "從藥房下班回家"
+   "time": "15:00",
+   "action": "開始清點藥房庫存"
   },
   {
    "time": "18:00",
-   "action": "與家人一起吃晚餐"
+   "action": "下班"
   },
   {
    "time": "19:00",
-   "action": "開始準備明天的工作"
+   "action": "與鄰居Yuriko Yamamoto打招呼"
   },
   {
-   "time": "21:00",
-   "action": "開始進行晚上運動"
+   "time": "20:00",
+   "action": "與同事Tom討論政治話題"
   },
   {
-   "time": "22:30",
-   "action": "休息，準備明天上班"
+   "time": "21:30",
+   "action": "與家人一起吃晚餐"
+  },
+  {
+   "time": "23:00",
+   "action": "上床睡覺"
   }
  ],
  "action_history": "",
- "memory": ""
+ "memory": "約好今天與同事一起清點藥房庫存"
 }
