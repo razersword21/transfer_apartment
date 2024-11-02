@@ -32,7 +32,7 @@ def write_memory_for_all_observe(path: str, person_file_name: str, location: str
                 label = "[others]"
                 person_information['memory']  = write_memory(person_information['memory'], current_time, content, label)
             
-            with open("C:/Users/user/Desktop/setiproject/personal_information/"+file, "w", encoding="utf-8") as f:
+            with open("./personal_information/"+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
 def remove_observe(data):

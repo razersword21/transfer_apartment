@@ -28,7 +28,7 @@ def daily_routine_create(path: str, todaytime: str):
                 daily_schedule, check_json_format_flag = check_json_format(daily_schedule, check_json_format_flag)
 
             person_information['schedule'] = daily_schedule['today_schedule']
-            with open("C:/Users/user/Desktop/setiproject/personal_information/"+file, "w", encoding="utf-8") as f:
+            with open("./personal_information/"+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
             print("執行時間:", times)
@@ -78,15 +78,15 @@ def person_action(path, current_data, observe, map_info):
             label = "[oneself]"
             person_information['memory'] = write_memory(person_information['memory'], current_time, action, label)
 
-            with open("C:/Users/user/Desktop/setiproject/personal_information/"+file, "w", encoding="utf-8") as f:
+            with open("./personal_information/"+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
             
-            write_memory_for_all_observe("C:/Users/user/Desktop/setiproject/personal_information/", file, current_data['location'], action)
+            write_memory_for_all_observe("./personal_information/", file, current_data['location'], action)
             print("-"*70)
 
 
 if __name__ == "__main__":
-    file_path = "C:/Users/user/Desktop/setiproject/personal_information/origin_information/"
+    file_path = "./personal_information/origin_information/"
     today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
     # daily_routine_create(file_path, today_time)
 
