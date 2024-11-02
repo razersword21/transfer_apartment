@@ -1,14 +1,13 @@
 {
- "background": {
-  "name": "林安迪",
-  "age": 15,
-  "job_occupation": "高中生",
-  "interests": "籃球、電動",
-  "personality": "熱心幫助別人、勤奮、友善",
-  "character_description": "林安迪是一位蝦米高中的高一新生，熱心助人。他與爸爸林志和媽媽Mei Lin住在一起。他晚上常跟同學一起玩電腦遊戲，下午放學時也會與朋友打籃球。"
- },
- "schedule": [],
- "action_history": "",
- "memory": "",
- "relationship":[]
+    "background": {
+        "name": "李子建",
+        "age": 18,
+        "job_occupation": "學生",
+        "interests": "健身、烹飪、動漫",
+        "personality": "沉穩、樂觀、樂於分享",
+        "character_description": "李子建是瓦羅蘭大學的新生，剛剛搬進宿舍，對新的大學生活感到興奮。他非常重視健康，熱愛健身和烹飪，經常會自己做簡單的料理。他的性格沉穩，但同時也非常樂觀且樂於與他人分享自己的經驗。閒暇時，他喜歡觀看動漫並偶爾嘗試畫一些角色。"
+    },
+    "schedule": [],
+    "memory": "",
+    "current_location":""
 }

@@ -19,13 +19,62 @@ daily_routine_prompt = """根據你的人物背景和和<人物記憶>，生成�
 }
 最少生成6條行程，最多10條，不需要包含其他內容"""
 
+check_adjust = """<人物動作歷史>{action_history}</人物動作歷史>
+<人物記憶>{memory}</人物記憶>
+<人物行程>{schedule}</人物行程>
+<觀察事項>{observes}</觀察事項>"""
+check_adjust_prompt = """根據你的人物背景和提供的所有資訊，判斷是否會影響到原本的行程，若會影響則回傳True，若不會則回傳False
+<範例情況>
+原本行程中下午1點到下午5點為上班時間
+{
+    "time": "07:00", "action": "起床，刷牙、吃早餐",
+    "time": "08:30", "action": "去Willow Market藥房上班",
+    "time": "12:00", "action": "午餐",
+    "time": "13:00", "action": "繼續工作",
+    "time": "17:00", "action": "下班回家",
+    "time": "18:00", "action": "晚餐",
+    "time": "20:00", "action": "開始跑步"
+}
+後來答應同事下午請假釣魚，則原本的行程須調整，去掉下午上班和下班行程，改為釣魚
+{
+    "time": "07:00", "action": "起床，刷牙、吃早餐",
+    "time": "08:30", "action": "去Willow Market藥房上班",
+    "time": "12:00", "action": "午餐",
+    "time": "14:00", "action": "請假與同事釣魚",
+    "time": "16:30", "action": "收拾釣魚器具準備回家",
+    "time": "18:00", "action": "晚餐",
+    "time": "20:00", "action": "開始跑步"
+}
+</範例情況>
+以json回傳，回傳範例格式如下:
+{
+    "need_adjust": bool
+}
+"""
+
+adjust = """<人物動作歷史>{action_history}</人物動作歷史>
+<人物記憶>{memory}</人物記憶>
+<人物行程>{schedule}</人物行程>
+<觀察事項>{observes}</觀察事項>"""
+adjust_prompt = """根據你的人物背景和提供的所有資訊，對於<人物行程>進行調整，重新安排行程
+以json回傳，回傳範例格式如下:
+{
+    "adjust_schedule": [
+        {"time":"07:00", "action":"起床，刷牙洗臉"},
+        {"time":"07:30", "action":"與家人一起吃早餐"},
+        {"time":"08:00", "action":"去<職業地點>上班"},
+        {"time":"23:00", "action":"上床睡覺"}
+    ]
+}
+"""
+
 design_action = """<人物動作歷史>{action_history}</人物動作歷史>
 <人物記憶>{memory}</人物記憶>
 <人物行程>{schedule}</人物行程>
 <觀察事項>{observes}</觀察事項>
 <目前地點>{current_location}</目前地點>
 <當前時間>{current_time}</當前時間>"""
-design_action_prompt = """為當前時間點決定你現在要做的動作，遵循以下<動作決定規則>
+design_action_prompt = """根據你的人物背景和提供的所有資訊，為當前時間點決定你現在要做的動作，遵循以下<動作決定規則>
 <動作決定規則>
 - 可決定使否留在原地或移動到其他地方
 - 不要包含移動到某地這類動作
@@ -44,7 +93,7 @@ create_dialogue = """<人物動作歷史>{action_history}</人物動作歷史>
 <目前地點>{current_location}</目前地點>
 <當前時間>{current_time}</當前時間>
 <對話歷史>{dialogue_history}</對話歷史>"""
-create_dialogue_prompt = """根據<對話歷史>和所有其他資訊，生成你想說的話，遵循以下<對話規則>
+create_dialogue_prompt = """根據你的人物背景和提供的所有資訊，特別是參考<對話歷史>，生成你想說的話，遵循以下<對話規則>
 <對話規則>
 - 若要結束聊天則結果回傳"<結束對話>"
 </對話規則>
@@ -57,7 +106,7 @@ organize = """<人物動作歷史>{action_history}</人物動作歷史>
 <人物記憶>{memory}</人物記憶>
 <觀察事項>{observes}</觀察事項>
 <對話歷史>{dialogue_history}</對話歷史>"""
-organize_prompt = """根據所有資訊以及人物資訊，將其中重要的事情整理成條列式，遵循以下<整理記憶規則>
+organize_prompt = """根據你的人物背景和提供的所有資訊，將其中你認為重要的事情整理成條列式的內容作為記憶，遵循以下<整理記憶規則>
 <整理記憶規則>
 - 按照對你的重要程度排序，最重要的記憶排第一
 </整理記憶規則>
