@@ -3,4 +3,4 @@ __pycache__/
 *__pycache__/'
 1.py
 planning_prompt.py
-personal_information/p3_information.json
+personal_information/*.json
