@@ -1,1 +1,0 @@
-model_name = "Qwen/Qwen2.5-3B-Instruct"

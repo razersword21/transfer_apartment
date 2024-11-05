@@ -17,10 +17,12 @@ def check_json_format(data: str, flag: bool):
             result = None
     return result, flag
 
+# 記憶格式
 def write_memory(person_memory: str, time: str, content: str, label: str):
     person_memory += time+" "+label+content+"\n"
     return person_memory
 
+# 將感知寫到其他人記憶
 def write_memory_for_all_observe(path: str, person_file_name: str, location: str, content: str):
     for file in os.listdir(path):
         if file.startswith("p") and (not file.startswith(person_file_name)):
@@ -36,14 +38,18 @@ def write_memory_for_all_observe(path: str, person_file_name: str, location: str
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
 def remove_observe(data):
-    # 如果是字典，處理每個鍵值對
-    if isinstance(data, dict):
-        # 創建新字典，排除 'observe' 鍵
-        return {k: remove_observe(v) for k, v in data.items() if k != 'observe'}
-    # 如果是列表，遞迴處理每個元素
-    elif isinstance(data, list):
-        return [remove_observe(x) for x in data]
-    # 如果是其他類型，直接返回
-    else:
-        return data
-    
+    locations = []
+    for location, items in data.items():
+        if "observe" in items:
+            del items["observe"]
+        locations.append(location)
+    locations.append("其他地方")
+    return data, locations
+
+# 獲取地圖資料
+def get_observe(file_path, person_information):
+    with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
+        map_information = json.load(f)
+    observe = map_information[person_information["current_location"]]
+    map_info, location_list = remove_observe(map_information)
+    return observe, map_info, location_list
