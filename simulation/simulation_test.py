@@ -67,36 +67,41 @@ def transfer_action(action, map_info, location_list):
 
 # 按人物順序決定動作 -> 會改成輸入個人資料決定個人動作
 def person_action(path):
+    with open(path+"map_information.json", "r", encoding="utf-8") as f:
+        map_information = json.load(f)
     for file in os.listdir(path):
         if file.startswith("p"):
             with open(path+file, "r", encoding="utf-8") as f:
                 person_information = json.load(f)
             
-            print(file)
             print(person_information['background']['name'])
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-            observe, map_info, location_list = get_observe(file_path, person_information)
+            observe, map_info, location_list, all_map_information = get_observe(map_information, person_information)
 
+            # 決定動作 + 轉換動作
             action = action_design(person_information, current_time, observe, map_info)
             transfered_action = transfer_action(action, map_info, location_list)
+            person_information, all_map_information = write_current_location_and_used_object(person_information, transfered_action, all_map_information)
 
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             label = "[oneself]"
-            person_information['memory'] = write_memory(person_information['memory'], current_time, action, label)
+            person_information['memory'] = make_memory(person_information['memory'], current_time, action, label)
 
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
             
             write_memory_for_all_observe(write_file_path, file, person_information['current_location'], action)
-            
+            write_map_observe(all_map_information, person_information, action)
 
+            # 生成想法
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             thought = thinking(person_information, observe, current_time)
-            person_information['memory'] = write_memory(person_information['memory'], current_time, thought, "thought")
+            person_information['memory'] = make_memory(person_information['memory'], current_time, thought, "thought")
 
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
+            # 盼竄行程改變
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             check_need_adjust = check_need_adjust_schedule(person_information, observe, current_time)
             if check_need_adjust:
