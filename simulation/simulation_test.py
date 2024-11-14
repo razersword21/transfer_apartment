@@ -101,12 +101,16 @@ def person_action(path):
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
-            # 盼竄行程改變
+            # 行程改變
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             check_need_adjust = check_need_adjust_schedule(person_information, observe, current_time)
             if check_need_adjust:
                 print("要調行程表")
                 adjsuted_schedule = adjsut_schedule(person_information, observe, current_time)
+            print("-"*70)
+
+            # 今天結束的反思
+            person_reflection_info = person_reflection(person_information)
             print("-"*70)
 
 # 生成想法
@@ -157,6 +161,17 @@ def adjsut_schedule(person_information, observe, current_time):
     print("執行時間:", times)
     return adjsuted_schedule["adjust_schedule"]
 
+def person_reflection(person_information):
+    check_json_format_flag = False
+    person_reflection_prompt = reflection.format(memory=person_information['memory'])+reflection_prompt
+    
+    while(check_json_format_flag == False):
+        person_reflection_info, times = make_design(MODEL, TOKENIZER, person_information['background'], person_reflection_prompt)
+        print("反思人物資料: {}".format(person_reflection_info))
+        person_reflection_info, check_json_format_flag = check_json_format(person_reflection_info, check_json_format_flag)
+
+    print("執行時間:", times)
+    return person_reflection_info
 
 if __name__ == "__main__":
     # file_path 和 write_file_path只需要去config_new改就好
