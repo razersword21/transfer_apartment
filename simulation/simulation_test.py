@@ -49,7 +49,7 @@ def action_design(person_information, current_time, observe, map_info):
         print("動作: {}".format(action))
         action, check_json_format_flag = check_json_format(action, check_json_format_flag)
 
-    print("執行時間:", times)
+    # print("執行時間:", times)
     return action["action"]
 
 # 將動作轉換成地圖資料
@@ -62,35 +62,37 @@ def transfer_action(action, map_info, location_list):
         print("動作轉換: {}".format(transfer_action))
         transfer_action, check_json_format_flag = check_json_format(transfer_action, check_json_format_flag)
 
-    print("執行時間:", times)
+    # print("執行時間:", times)
     return transfer_action
 
 # 按人物順序決定動作 -> 會改成輸入個人資料決定個人動作
-def person_action(path):
-    with open(path+"map_information.json", "r", encoding="utf-8") as f:
-        map_information = json.load(f)
-    for file in os.listdir(path):
+def person_action(write_file_path):
+    with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
+        all_map_information = json.load(f)
+    for file in os.listdir(write_file_path):
         if file.startswith("p"):
-            with open(path+file, "r", encoding="utf-8") as f:
+            with open(write_file_path+file, "r", encoding="utf-8") as f:
                 person_information = json.load(f)
             
             print(person_information['background']['name'])
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-            observe, map_info, location_list, all_map_information = get_observe(map_information, person_information)
+            observe, map_info, location_list, all_map_information = get_observe(all_map_information, person_information)
+            print("start ", all_map_information)
 
             # 決定動作 + 轉換動作
             action = action_design(person_information, current_time, observe, map_info)
             transfered_action = transfer_action(action, map_info, location_list)
+            
             person_information, all_map_information = write_current_location_and_used_object(person_information, transfered_action, all_map_information)
 
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             label = "[oneself]"
             person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, label)
 
-            with open(write_file_path+file, "w", encoding="utf-8") as f:
-                json.dump(person_information, f, ensure_ascii=False, indent=4)
+            # with open(write_file_path+file, "w", encoding="utf-8") as f:
+            #     json.dump(person_information, f, ensure_ascii=False, indent=4)
             
-            write_memory_for_all_observe(write_file_path, file, person_information['current_location'], action)
+            write_memory_for_all_observe(write_file_path, file, person_information['current_location'], action, person_information['background']['name'])
             write_map_observe(all_map_information, person_information, action)
 
             # 生成想法
@@ -107,7 +109,6 @@ def person_action(path):
             if check_need_adjust:
                 print("要調行程表")
                 adjsuted_schedule = adjsut_schedule(person_information, observe, current_time)
-            print("-"*70)
 
             # 今天結束的反思
             person_reflection_info = person_reflection(person_information)
@@ -182,10 +183,8 @@ if __name__ == "__main__":
 
     print()
     print("="*70)
+    print()
     # 決定動作並寫入記憶
     person_action(write_file_path)
-    # 反應
 
-    # 生成想法
-
-    # 反思
+    # 轉化動作和反思提示詞要再修
