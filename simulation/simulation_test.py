@@ -85,7 +85,7 @@ def person_action(path):
 
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             label = "[oneself]"
-            person_information['memory'] = make_memory(person_information['memory'], current_time, action, label)
+            person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, label)
 
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
@@ -96,7 +96,7 @@ def person_action(path):
             # 生成想法
             current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
             thought = thinking(person_information, observe, current_time)
-            person_information['memory'] = make_memory(person_information['memory'], current_time, thought, "thought")
+            person_information['memory'] = make_memory(person_information['memory'], None, current_time, thought, "[thought]")
 
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
@@ -163,8 +163,8 @@ def adjsut_schedule(person_information, observe, current_time):
 
 def person_reflection(person_information):
     check_json_format_flag = False
-    person_reflection_prompt = reflection.format(memory=person_information['memory'])+reflection_prompt
-    
+    person_reflection_prompt = reflection.format(person_info=person_information['background'], 
+                                                 memory=person_information['memory'])+reflection_prompt
     while(check_json_format_flag == False):
         person_reflection_info, times = make_design(MODEL, TOKENIZER, person_information['background'], person_reflection_prompt)
         print("反思人物資料: {}".format(person_reflection_info))

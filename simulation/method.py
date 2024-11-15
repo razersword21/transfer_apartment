@@ -21,8 +21,11 @@ def check_json_format(data: str, flag: bool):
     return result, flag
 
 # 記憶格式
-def make_memory(person_memory: str, time: str, content: str, label: str):
-    person_memory += time+" "+label+content+"\n"
+def make_memory(person_memory: str, person_name:str, time: str, content: str, label: str):
+    if person_name == None:
+        person_memory += time+" "+label+content+"\n"
+    else:
+        person_memory += time+" "+label+person_name+content+"\n"
     return person_memory
 
 # 將感知寫到其他人記憶
@@ -35,13 +38,19 @@ def write_memory_for_all_observe(path: str, person_file_name: str, location: str
             if person_information['current_location'] == location:
                 current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
                 label = "[others]"
-                person_information['memory']  = make_memory(person_information['memory'], current_time, content, label)
+                person_information['memory']  = make_memory(person_information['memory'], person_information['background']['name'], current_time, content, label)
             
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
 def write_map_observe(map_data, person_info, action):
-    map_data[person_info["current_location"]]['observe'].append(person_info['background']['name']+action)
+    print("write_map_observe ", map_data, person_info["current_location"])
+    if person_info["current_location"] in map_data:
+        map_data[person_info["current_location"]]['observe'].append(person_info['background']['name']+action)
+    else:
+        if "其他地方" not in map_data:
+            map_data["其他地方"] = {"observe":[person_info['background']['name']+action]}
+        map_data["其他地方"]['observe'].append(person_info['background']['name']+action)
     with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
         json.dump(map_data, f, ensure_ascii=False, indent=4)
 
@@ -62,7 +71,9 @@ def get_observe(map_information, person_information):
     return observe, map_info, location_list, all_map_information
 
 def write_current_location_and_used_object(person_information, transfered_action, all_map_information):
+    print("write_current_location_and_used_object ", all_map_information, person_information["current_location"])
     person_information["current_location"] = transfered_action["location"]
-    if transfered_action['object'] != None and all_map_information[person_information["current_location"]][transfered_action['object']] > 0:
-        all_map_information[person_information["current_location"]][transfered_action['object']] -= 1
+    if person_information["current_location"] in all_map_information:
+        if transfered_action['object'] != None and all_map_information[person_information["current_location"]][transfered_action['object']] > 0:
+            all_map_information[person_information["current_location"]][transfered_action['object']] -= 1
     return person_information, all_map_information
