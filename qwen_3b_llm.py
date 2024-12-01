@@ -17,9 +17,9 @@ def make_design(person_information: dict, prompt: str):
     ]
 
     text = tokenizer.apply_chat_template(
-    messages,
-    tokenize=False,
-    add_generation_prompt=True
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
     )
     model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
 
