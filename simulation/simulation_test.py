@@ -2,13 +2,14 @@ from model import *
 from prompt_new import *
 from method import *
 from config_new import *
+from action_method import *
 import copy
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 MODEL = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype="auto",
+    torch_dtype="auto", 
     device_map="auto"
 )
 TOKENIZER = AutoTokenizer.from_pretrained(model_name)
@@ -20,110 +21,58 @@ def daily_routine_create(path: str, todaytime: str):
         if file.startswith("p"):
             with open(path+file, "r", encoding="utf-8") as f:
                 person_information = json.load(f)
-            check_json_format_flag = False
-            daily_prompt = daily_routine.format(memory=person_information['memory'], current_time=todaytime)+daily_routine_prompt
 
-            while(check_json_format_flag == False):
-                daily_schedule, times = make_design(MODEL, TOKENIZER, person_information['background'], daily_prompt)
-                print("行程表: {}".format(daily_schedule))
-                daily_schedule, check_json_format_flag = check_json_format(daily_schedule, check_json_format_flag)
-
+            # 行程表生成
+            daily_schedule = schedule_create(person_information, todaytime)
             person_information['schedule'] = daily_schedule['today_schedule']
+
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
-            print("執行時間:", times)
-
-# 動作決定
-def action_design(person_information, current_time, observe, map_info):
-    check_json_format_flag = False
-    action_prompt = design_action.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_location=person_information["current_location"], 
-                         current_time=current_time,
-                         map=map_info)+design_action_prompt
-    
-    while(check_json_format_flag == False):
-        action, times = make_design(MODEL, TOKENIZER, person_information['background'], action_prompt)
-        print("動作: {}".format(action))
-        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
-
-    # print("執行時間:", times)
-    return action["action"]
-
-# 將動作轉換成地圖資料
-def transfer_action(action, map_info, location_list):
-    check_json_format_flag = False
-    transfor_prompt = transfor_action.format(action_content=action, location_list=location_list, map_object=map_info)+transfor_action_prompt
-
-    while(check_json_format_flag == False):
-        transfer_action, times = transfer_model(MODEL, TOKENIZER, transfor_prompt)
-        print("動作轉換: {}".format(transfer_action))
-        transfer_action, check_json_format_flag = check_json_format(transfer_action, check_json_format_flag)
-
-    # print("執行時間:", times)
-    return transfer_action
-
-# 是否換or加動作
-def change_action(person_information, current_time, observe, map_info):
-    check_json_format_flag = False
-    change_action_prompt = change_action_prefix.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_location=person_information["current_location"], 
-                         current_time=current_time,
-                         map=map_info)+change_action_profix
-    
-    while(check_json_format_flag == False):
-        action, times = make_design(MODEL, TOKENIZER, person_information['background'], change_action_prompt)
-        print("動作: {}".format(action))
-        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
-
-    # print("執行時間:", times)
-    return action["action"]
-
-# 按人物順序決定動作 -> 會改成輸入個人資料決定個人動作
+# 單人動作決定鍊
 def person_action(person_information, file_name, all_map_information):
-    print(person_information['background']['name'])
+    print(f"目前角色: {person_information['background']['name']}")
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     observe, map_info, location_list, all_map_information = get_observe(all_map_information, person_information)
     
+    # 動作決定
     action = action_design(person_information, current_time, observe, map_info)
+    # 動作轉化
     transfered_action = transfer_action(action, map_info, location_list)
-
-    person_information, all_map_information = write_current_location_and_used_object(person_information, transfered_action, all_map_information)
-
+    # 由轉化動作更新自己位置和使用物品
+    person_information, all_map_information = get_current_location_and_used_object(person_information, transfered_action, all_map_information)
+    # 寫入自己記憶
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-    label = "[oneself]"
-    person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, label)
-
+    person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, "[oneself]")
+    # 寫入別人記憶
     write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action, person_information['background']['name'])
+    # 寫入地圖記憶
     all_map_information = write_map_observe(all_map_information, person_information, action)
-
+    # 想法生成
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     thought = thinking(person_information, observe, current_time)
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, thought, "[thought]")
-
+    # 動作改變
     changed_action = change_action(person_information, current_time, observe, map_info)
 
-    return person_information, observe
+    return person_information, observe, all_map_information
 
 def all_person_action(write_file_path):
     with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
         all_map_information = json.load(f)
+        
     for file in os.listdir(write_file_path):
         if file.startswith("p"):
             c = 5
             while(c>0):
-                
                 with open(write_file_path+file, "r", encoding="utf-8") as f:
                     person_information = json.load(f)
                 
                 one_person_information = copy.deepcopy(person_information)
                 one_person_name = file
-                print(5-c)
-                part_person_information, observe = person_action(one_person_information, one_person_name, all_map_information)
+                print(f"第{5-c}輪")
+                
+                part_person_information, observe, all_map_information = person_action(one_person_information, one_person_name, all_map_information)
 
                 with open(write_file_path+file, "w", encoding="utf-8") as f:
                     json.dump(part_person_information, f, ensure_ascii=False, indent=4)
@@ -132,82 +81,21 @@ def all_person_action(write_file_path):
                 current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
                 check_need_adjust = check_need_adjust_schedule(part_person_information, observe, current_time)
                 if check_need_adjust:
-                    print("要調行程表")
-                    adjsuted_schedule = adjsut_schedule(part_person_information, observe, current_time)
+                    print("需要調整行程表")
+                    adjusted_schedule = adjsut_schedule(part_person_information, observe, current_time)
+                    part_person_information['schedule'] = adjusted_schedule['adjust_schedule']
 
-                    part_person_information['schedule'] = adjsuted_schedule['adjust_schedule']
-
-                with open(write_file_path+file, "w", encoding="utf-8") as f:
-                    json.dump(part_person_information, f, ensure_ascii=False, indent=4)
+                    with open(write_file_path+file, "w", encoding="utf-8") as f:
+                        json.dump(part_person_information, f, ensure_ascii=False, indent=4)
                 
-                with open(write_file_path+"map_information.json", "r", encoding="utf-8") as f:
-                    all_map_information = json.load(f)
                 c-=1
 
             # 今天結束的反思
             person_reflection_info = person_reflection(person_information)
             print("-"*70)
-            break
 
-# 生成想法
-def thinking(person_information, observe, current_time):
-    check_json_format_flag = False
-    think_prompt = create_thought.format(memory=person_information['memory'],
-                         observes=observe,
-                         current_location=person_information["current_location"],
-                         current_time=current_time)+create_thought_prompt
-    
-    while(check_json_format_flag == False):
-        think, times = make_design(MODEL, TOKENIZER, person_information['background'], think_prompt)
-        print("想法: {}".format(think))
-        think, check_json_format_flag = check_json_format(think, check_json_format_flag)
-
-    print("執行時間:", times)
-    return think["thought"]
-
-# 判斷是否要調行程表
-def check_need_adjust_schedule(person_information, observe, current_time):
-    check_json_format_flag = False
-    check_need_adjust_prompt = check_adjust.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_time=current_time)+check_adjust_prompt
-    
-    while(check_json_format_flag == False):
-        check_need_adjust, times = make_design(MODEL, TOKENIZER, person_information['background'], check_need_adjust_prompt)
-        print("判斷是否要調行程表: {}".format(check_need_adjust.lower()))
-        check_need_adjust, check_json_format_flag = check_json_format(check_need_adjust.lower(), check_json_format_flag)
-
-    print("執行時間:", times)
-    return check_need_adjust["need_adjust"]
-
-# 修正行程表
-def adjsut_schedule(person_information, observe, current_time):
-    check_json_format_flag = False
-    adjsut_schedule_prompt = adjust_routine.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_time=current_time)+adjust_routine_prompt
-    
-    while(check_json_format_flag == False):
-        adjsuted_schedule, times = make_design(MODEL, TOKENIZER, person_information['background'], adjsut_schedule_prompt)
-        print("修改行程表: {}".format(adjsuted_schedule))
-        adjsuted_schedule, check_json_format_flag = check_json_format(adjsuted_schedule, check_json_format_flag)
-
-    print("執行時間:", times)
-    return adjsuted_schedule["adjust_schedule"]
-
-def person_reflection(person_information):
-    check_json_format_flag = False
-    person_reflection_prompt = reflection.format(person_info=person_information['background'], 
-                                                 memory=person_information['memory'])+reflection_prompt
-    while(check_json_format_flag == False):
-        person_reflection_info, times = make_design(MODEL, TOKENIZER, person_information['background'], person_reflection_prompt)
-        print("反思人物資料: {}".format(person_reflection_info))
-        person_reflection_info, check_json_format_flag = check_json_format(person_reflection_info, check_json_format_flag)
-
-    print("執行時間:", times)
-    return person_reflection_info
+            with open(file_path+"map_information.json", "w", encoding="utf-8") as f:
+                json.dump(all_map_information, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     # file_path 和 write_file_path只需要去config_new改就好
@@ -221,5 +109,3 @@ if __name__ == "__main__":
     print()
     # 決定動作並寫入記憶
     all_person_action(write_file_path)
-
-    # 轉化動作和反思提示詞要再修
