@@ -31,7 +31,7 @@ def daily_routine_create(path: str, todaytime: str):
 
 # 單人動作決定鍊
 def person_action(person_information, file_name, all_map_information):
-    print(f"目前角色: {person_information['background']['name']}")
+    print(f"目前角色: {person_information['personality']['name']}")
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     observe, map_info, location_list, all_map_information = get_observe(all_map_information, person_information)
     
@@ -45,7 +45,7 @@ def person_action(person_information, file_name, all_map_information):
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, "[oneself]")
     # 寫入別人記憶
-    write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action, person_information['background']['name'])
+    write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action, person_information['personality']['name'])
     # 寫入地圖記憶
     all_map_information = write_map_observe(all_map_information, person_information, action)
     # 想法生成
