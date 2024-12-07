@@ -1,3 +1,19 @@
+from model import *
+from prompt_new import *
+from method import *
+from config_new import *
+from action_method import *
+import copy
+
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+MODEL = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype="auto", 
+    device_map="auto"
+)
+TOKENIZER = AutoTokenizer.from_pretrained(model_name)
+
 def schedule_create(person_information, todaytime):
     check_json_format_flag = False
     daily_prompt = daily_routine.format(memory=person_information['memory'], current_time=todaytime)+daily_routine_prompt

@@ -69,7 +69,7 @@ def remove_observe(data):
 
 # 獲取地圖資料
 def get_observe(map_information, person_information):
-    
+    all_map_information = copy.deepcopy(map_information)
     observe = map_information[person_information["current_location"]]
     map_info, location_list = remove_observe(map_information)
     

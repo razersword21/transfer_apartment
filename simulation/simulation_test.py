@@ -5,14 +5,14 @@ from config_new import *
 from action_method import *
 import copy
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+# from transformers import AutoModelForCausalLM, AutoTokenizer
 
-MODEL = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype="auto", 
-    device_map="auto"
-)
-TOKENIZER = AutoTokenizer.from_pretrained(model_name)
+# MODEL = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     torch_dtype="auto", 
+#     device_map="auto"
+# )
+# TOKENIZER = AutoTokenizer.from_pretrained(model_name)
 
 
 # 行程表生成
@@ -53,7 +53,7 @@ def person_action(person_information, file_name, all_map_information):
     thought = thinking(person_information, observe, current_time)
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, thought, "[thought]")
     # 動作改變
-    changed_action = change_action(person_information, current_time, observe, map_info)
+    # changed_action = change_action(person_information, current_time, observe, map_info)
 
     return person_information, observe, all_map_information
 
