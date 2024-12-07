@@ -1,103 +1,111 @@
 from model import *
 from prompt_new import *
 from method import *
-from config import *
+from config_new import *
+from action_method import *
+import copy
+
+# from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# MODEL = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     torch_dtype="auto", 
+#     device_map="auto"
+# )
+# TOKENIZER = AutoTokenizer.from_pretrained(model_name)
 
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-MODEL = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype="auto",
-    device_map="auto"
-)
-TOKENIZER = AutoTokenizer.from_pretrained(model_name)
-
-
+# 行程表生成
 def daily_routine_create(path: str, todaytime: str):
     for file in os.listdir(path):
         if file.startswith("p"):
             with open(path+file, "r", encoding="utf-8") as f:
                 person_information = json.load(f)
-            check_json_format_flag = False
-            daily_prompt = daily_routine.format(memory=person_information['memory'], current_time=todaytime)+daily_routine_prompt
 
-            while(check_json_format_flag == False):
-                daily_schedule, times = make_design(MODEL, TOKENIZER, person_information['background'], daily_prompt)
-                print("生成結果: {}".format(daily_schedule))
-                daily_schedule, check_json_format_flag = check_json_format(daily_schedule, check_json_format_flag)
-
+            # 行程表生成
+            daily_schedule = schedule_create(person_information, todaytime)
             person_information['schedule'] = daily_schedule['today_schedule']
-            with open("./personal_information/"+file, "w", encoding="utf-8") as f:
+
+            with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
-            print("執行時間:", times)
-
-def action_design(person_information, current_data, observe, map_info):
-    check_json_format_flag = False
-    action_prompt = design_action.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_location=current_data["location"], 
-                         current_time=current_data["time"],
-                         map=map_info)+design_action_prompt
+# 單人動作決定鍊
+def person_action(person_information, file_name, all_map_information):
+    print(f"目前角色: {person_information['personality']['name']}")
+    current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
+    observe, map_info, location_list, all_map_information = get_observe(all_map_information, person_information)
     
-    while(check_json_format_flag == False):
-        action, times = make_design(MODEL, TOKENIZER, person_information['background'], action_prompt)
-        print("生成結果: {}".format(action))
-        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
+    # 動作決定
+    action = action_design(person_information, current_time, observe, map_info)
+    # 動作轉化
+    transfered_action = transfer_action(action, map_info, location_list)
+    # 由轉化動作更新自己位置和使用物品
+    person_information, all_map_information = get_current_location_and_used_object(person_information, transfered_action, all_map_information)
+    # 寫入自己記憶
+    current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
+    person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, "[oneself]")
+    # 寫入別人記憶
+    write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action, person_information['personality']['name'])
+    # 寫入地圖記憶
+    all_map_information = write_map_observe(all_map_information, person_information, action)
+    # 想法生成
+    current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
+    thought = thinking(person_information, observe, current_time)
+    person_information['memory'] = make_memory(person_information['memory'], None, current_time, thought, "[thought]")
+    # 動作改變
+    # changed_action = change_action(person_information, current_time, observe, map_info)
 
-    print("執行時間:", times)
-    return action["action"]
+    return person_information, observe, all_map_information
 
-def transfer_action(action, map_info):
-    check_json_format_flag = False
-    transfor_prompt = transfor_action.format(action_content=action, map=map_info)+transfor_action_prompt
-
-    while(check_json_format_flag == False):
-        transfer_action, times = transfer_model(MODEL, TOKENIZER, transfor_prompt)
-        print("生成結果: {}".format(transfer_action))
-        transfer_action, check_json_format_flag = check_json_format(transfer_action, check_json_format_flag)
-
-    print("執行時間:", times)
-    return transfer_action
-
-def person_action(path, current_data, observe, map_info):
-    for file in os.listdir(path):
+def all_person_action(write_file_path):
+    with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
+        all_map_information = json.load(f)
+        
+    for file in os.listdir(write_file_path):
         if file.startswith("p"):
-            with open(path+file, "r", encoding="utf-8") as f:
-                person_information = json.load(f)
-            
-            print(file)
-            print(person_information['background']['name'])
+            c = 5
+            while(c>0):
+                with open(write_file_path+file, "r", encoding="utf-8") as f:
+                    person_information = json.load(f)
+                
+                one_person_information = copy.deepcopy(person_information)
+                one_person_name = file
+                print(f"第{5-c}輪")
+                
+                part_person_information, observe, all_map_information = person_action(one_person_information, one_person_name, all_map_information)
 
-            action = action_design(person_information, current_data, observe, map_info)
-            transfered_action = transfer_action(action, map_info)
+                with open(write_file_path+file, "w", encoding="utf-8") as f:
+                    json.dump(part_person_information, f, ensure_ascii=False, indent=4)
 
-            current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-            label = "[oneself]"
-            person_information['memory'] = write_memory(person_information['memory'], current_time, action, label)
+                # 行程改變
+                current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
+                check_need_adjust = check_need_adjust_schedule(part_person_information, observe, current_time)
+                if check_need_adjust:
+                    print("需要調整行程表")
+                    adjusted_schedule = adjsut_schedule(part_person_information, observe, current_time)
+                    part_person_information['schedule'] = adjusted_schedule['adjust_schedule']
 
-            with open("./personal_information/"+file, "w", encoding="utf-8") as f:
-                json.dump(person_information, f, ensure_ascii=False, indent=4)
-            
-            write_memory_for_all_observe("./personal_information/", file, current_data['location'], action)
+                    with open(write_file_path+file, "w", encoding="utf-8") as f:
+                        json.dump(part_person_information, f, ensure_ascii=False, indent=4)
+                
+                c-=1
+
+            # 今天結束的反思
+            person_reflection_info = person_reflection(person_information)
             print("-"*70)
 
+            with open(file_path+"map_information.json", "w", encoding="utf-8") as f:
+                json.dump(all_map_information, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
-    file_path = "./personal_information/origin_information/"
+    # file_path 和 write_file_path只需要去config_new改就好
+    
+    # 生成行程表
     today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
-    # daily_routine_create(file_path, today_time)
+    daily_routine_create(file_path, today_time)
 
     print()
     print("="*70)
-    current_data = {
-        "location": "宿舍",
-        "time": time.time()
-    }
-    with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
-        map_information = json.load(f)
-    observe = map_information[current_data["location"]]
-    map_info = remove_observe(map_information)
-    person_action(file_path, current_data, observe, map_info)
+    print()
+    # 決定動作並寫入記憶
+    all_person_action(write_file_path)

@@ -1,24 +1,17 @@
 {
     "宿舍":{
-        "bed1":"not_used",
-        "bed2":"not_used",
-        "bed3":"not_used",
-        "desk1":"not_used",
-        "desk2":"not_used",
-        "desk3":"not_used",
-        "computer_desk1":"not_used",
-        "computer_desk2":"not_used",
+        "床": 3,
+        "書桌": 3,
+        "電腦": 2,
+        "電視": 2,
         "observe":[]
     },
     "廁所":{
-        "toilet":"not_used",
+        "廁所":"not_used",
         "observe":[]
     },
     "餐廳":{
-        "chair1":"not_used",
-        "chair2":"not_used",
-        "chair3":"not_used",
-        "chair4":"not_used",
+        "椅子": 4,
         "observe":[]
     }
 }

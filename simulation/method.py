@@ -1,8 +1,11 @@
 import json
 import re
 import os
+import copy
 import time
 from datetime import datetime
+
+from config_new import *
 
 def check_json_format(data: str, flag: bool):
     try:
@@ -17,33 +20,74 @@ def check_json_format(data: str, flag: bool):
             result = None
     return result, flag
 
-def write_memory(person_memory: str, time: str, content: str, label: str):
-    person_memory += time+" "+label+content+"\n"
+# 記憶格式
+def make_memory(person_memory: str, person_name:str, time: str, content: str, label: str):
+    if person_name == None:
+        person_memory += time+" "+label+content+"\n"
+    else:
+        person_memory += time+" "+label+person_name+content+"\n"
     return person_memory
 
-def write_memory_for_all_observe(path: str, person_file_name: str, location: str, content: str):
+# 將感知寫到其他人記憶
+def write_memory_for_all_observe(path: str, person_file_name: str, location: str, content: str, person_name:str):
     for file in os.listdir(path):
         if file.startswith("p") and (not file.startswith(person_file_name)):
-            
             with open(path+file, "r", encoding="utf-8") as f:
                 person_information = json.load(f)
+
             if person_information['current_location'] == location:
                 current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
                 label = "[others]"
-                person_information['memory']  = write_memory(person_information['memory'], current_time, content, label)
+                
+                person_information['memory']  = make_memory(person_information['memory'], person_name, current_time, content, label)
             
-            with open("./personal_information/"+file, "w", encoding="utf-8") as f:
-                json.dump(person_information, f, ensure_ascii=False, indent=4)
+                with open(write_file_path+file, "w", encoding="utf-8") as f:
+                    json.dump(person_information, f, ensure_ascii=False, indent=4)
+
+def write_map_observe(map_data, person_info, action):
+    
+    if person_info["current_location"] in map_data:
+        map_data[person_info["current_location"]]['observe'].append(person_info['background']['name']+action)
+    else:
+        if "其他地方" not in map_data:
+            map_data["其他地方"] = {"observe":[person_info['background']['name']+action]}
+        map_data["其他地方"]['observe'].append(person_info['background']['name']+action)
+    
+    with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
+        json.dump(map_data, f, ensure_ascii=False, indent=4)
+    return map_data
 
 def remove_observe(data):
-    # 如果是字典，處理每個鍵值對
-    if isinstance(data, dict):
-        # 創建新字典，排除 'observe' 鍵
-        return {k: remove_observe(v) for k, v in data.items() if k != 'observe'}
-    # 如果是列表，遞迴處理每個元素
-    elif isinstance(data, list):
-        return [remove_observe(x) for x in data]
-    # 如果是其他類型，直接返回
-    else:
-        return data
+    locations = []
+    data_without_observe = copy.deepcopy(data)  # 创建深拷贝
+    for location, items in data_without_observe.items():
+        if "observe" in items:
+            del items["observe"]
+        locations.append(location)
+    locations.append("其他地方")
+    return data_without_observe, locations
+
+# 獲取地圖資料
+def get_observe(map_information, person_information):
+    all_map_information = copy.deepcopy(map_information)
+    observe = map_information[person_information["current_location"]]
+    map_info, location_list = remove_observe(map_information)
     
+    return observe, map_info, location_list, all_map_information
+
+def get_current_location_and_used_object(person_information, transfered_action, all_map_information):
+    person_information["current_location"] = transfered_action["location"]
+    
+    # 确保新位置存在且有observe数组
+    if person_information["current_location"] in all_map_information:
+        if "observe" not in all_map_information[person_information["current_location"]]:
+            all_map_information[person_information["current_location"]]["observe"] = []
+            
+        if transfered_action['object'] != 'None' and all_map_information[person_information["current_location"]][transfered_action['object']] > 0:
+            all_map_information[person_information["current_location"]][transfered_action['object']] -= 1
+    else:
+        # 处理"其他地方"的情况
+        if "其他地方" not in all_map_information:
+            all_map_information["其他地方"] = {"observe": []}
+    
+    return person_information, all_map_information
