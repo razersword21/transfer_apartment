@@ -49,8 +49,6 @@ def write_map_observe(map_data, person_info, action):
     if person_info["current_location"] in map_data:
         map_data[person_info["current_location"]]['observe'].append(person_info['background']['name']+action)
     else:
-        if "其他地方" not in map_data:
-            map_data["其他地方"] = {"observe":[person_info['background']['name']+action]}
         map_data["其他地方"]['observe'].append(person_info['background']['name']+action)
     
     with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
@@ -60,11 +58,13 @@ def write_map_observe(map_data, person_info, action):
 def remove_observe(data):
     locations = []
     data_without_observe = copy.deepcopy(data)  # 创建深拷贝
+    all_location_information = []
     for location, items in data_without_observe.items():
         if "observe" in items:
             del items["observe"]
         locations.append(location)
-    locations.append("其他地方")
+        print(location, items)
+    
     return data_without_observe, locations
 
 # 獲取地圖資料
