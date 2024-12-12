@@ -1,6 +1,10 @@
 from prompt_new import *
 import time
 
+from threading import Lock
+
+# 建立全域鎖
+lock = Lock()
 
 def make_design(model, tokenizer, person_information: dict, prompt: str):
     messages = [
@@ -16,10 +20,11 @@ def make_design(model, tokenizer, person_information: dict, prompt: str):
     model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
 
     start_time = time.time()
-    generated_ids = model.generate(
-        **model_inputs,
-        max_new_tokens=1024
-    )
+    with lock:
+        generated_ids = model.generate(
+            **model_inputs,
+            max_new_tokens=1024
+        )
     generated_ids = [
         output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
     ]
@@ -40,10 +45,11 @@ def transfer_model(model, tokenizer, prompt: str):
     model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
 
     start_time = time.time()
-    generated_ids = model.generate(
-        **model_inputs,
-        max_new_tokens=1024
-    )
+    with lock:
+        generated_ids = model.generate(
+            **model_inputs,
+            max_new_tokens=1024
+        )
     generated_ids = [
         output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
     ]

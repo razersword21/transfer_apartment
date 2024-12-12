@@ -32,17 +32,18 @@ def daily_routine_create(path: str, todaytime: str):
 # 單人動作決定鍊
 def person_action(person_information, file_name, all_map_information):
     print(f"目前角色: {person_information['personality']['name']}")
-    current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-    observe, map_info, location_list, all_map_information = get_observe(all_map_information, person_information)
     
+    observe, map_info, location_list, all_location_object, all_map_information = get_map_information(all_map_information, person_information)
     # 動作決定
-    action = action_design(person_information, current_time, observe, map_info)
-    # 動作轉化
-    transfered_action = transfer_action(action, map_info, location_list)
-    # 由轉化動作更新自己位置和使用物品
-    person_information, all_map_information = get_current_location_and_used_object(person_information, transfered_action, all_map_information)
-    # 寫入自己記憶
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
+    do_action = False
+    while(do_action == False):
+        action = action_design(person_information, current_time, observe, all_location_object)
+        do_action = check_action_valid(action, all_map_information)
+
+    # 由動作更新自己位置和使用物品
+    person_information, all_map_information = get_current_location_and_used_object(person_information, action, all_map_information)
+    # 寫入自己記憶
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, "[oneself]")
     # 寫入別人記憶
     write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action, person_information['personality']['name'])
@@ -52,8 +53,6 @@ def person_action(person_information, file_name, all_map_information):
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     thought = thinking(person_information, observe, current_time)
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, thought, "[thought]")
-    # 動作改變
-    # changed_action = change_action(person_information, current_time, observe, map_info)
 
     return person_information, observe, all_map_information
 
@@ -108,4 +107,4 @@ if __name__ == "__main__":
     print("="*70)
     print()
     # 決定動作並寫入記憶
-    all_person_action(write_file_path)
+    # all_person_action(write_file_path)

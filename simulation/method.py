@@ -45,13 +45,10 @@ def write_memory_for_all_observe(path: str, person_file_name: str, location: str
                     json.dump(person_information, f, ensure_ascii=False, indent=4)
 
 def write_map_observe(map_data, person_info, action):
-    
     if person_info["current_location"] in map_data:
-        map_data[person_info["current_location"]]['observe'].append(person_info['background']['name']+action)
+        map_data[person_info["current_location"]]['observe'].append({person_info['background']['name']:action})
     else:
-        if "其他地方" not in map_data:
-            map_data["其他地方"] = {"observe":[person_info['background']['name']+action]}
-        map_data["其他地方"]['observe'].append(person_info['background']['name']+action)
+        map_data["其他"]['observe'].append({person_info['background']['name']:action})
     
     with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
         json.dump(map_data, f, ensure_ascii=False, indent=4)
@@ -60,25 +57,29 @@ def write_map_observe(map_data, person_info, action):
 def remove_observe(data):
     locations = []
     data_without_observe = copy.deepcopy(data)  # 创建深拷贝
+    all_location_information = {}
     for location, items in data_without_observe.items():
         if "observe" in items:
             del items["observe"]
         locations.append(location)
-    locations.append("其他地方")
-    return data_without_observe, locations
+        all_location_information[location] = {key for key, value in items.items()}
+    
+    return data_without_observe, locations, all_location_information
 
 # 獲取地圖資料
-def get_observe(map_information, person_information):
+def get_map_information(map_information, person_information):
     all_map_information = copy.deepcopy(map_information)
-    observe = map_information[person_information["current_location"]]
-    map_info, location_list = remove_observe(map_information)
+    try:
+        observe = map_information[person_information["current_location"]]['observe']
+    except:
+        observe = []
+    data_without_observe, location_name_list, all_location_object = remove_observe(map_information)
     
-    return observe, map_info, location_list, all_map_information
+    return observe, data_without_observe, location_name_list, all_location_object, all_map_information
 
 def get_current_location_and_used_object(person_information, transfered_action, all_map_information):
     person_information["current_location"] = transfered_action["location"]
     
-    # 确保新位置存在且有observe数组
     if person_information["current_location"] in all_map_information:
         if "observe" not in all_map_information[person_information["current_location"]]:
             all_map_information[person_information["current_location"]]["observe"] = []
@@ -86,8 +87,13 @@ def get_current_location_and_used_object(person_information, transfered_action, 
         if transfered_action['object'] != 'None' and all_map_information[person_information["current_location"]][transfered_action['object']] > 0:
             all_map_information[person_information["current_location"]][transfered_action['object']] -= 1
     else:
-        # 处理"其他地方"的情况
-        if "其他地方" not in all_map_information:
-            all_map_information["其他地方"] = {"observe": []}
+        person_information["current_location"] = "其他"
     
     return person_information, all_map_information
+
+# 檢查動作是否有效
+def check_action_valid(action, all_location_object):
+    if action['object'] in all_location_object and all_location_object[action['object']] > 0:
+        return True
+    else:
+        return False
