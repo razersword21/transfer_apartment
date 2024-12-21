@@ -53,22 +53,24 @@ def person_action(person_information, file_name, all_map_information):
     print(f"目前觀察: {observe}")
     print(f"data_without_observe: {data_without_observe}")
     print(f"目前地圖物件: {all_location_object}")
+    print("")
 
     # 動作決定
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     do_action = False
     while(do_action == False):
-        action = action_design(person_information, current_time, observe, all_location_object, location_list, all_location_information[person_information['current_location']]['nearbyPersons'])
-        do_action = check_action_valid(action, all_map_information)
+        action = action_design(person_information, current_time, observe, all_location_object, location_list, all_map_information[person_information['current_location']]['nearbyPersons'])
+        do_action = check_action_valid(action, all_location_object, all_map_information)
+        print(f"動作決定: {action}, {do_action}")
 
     # 由動作更新自己位置和使用物品
     person_information, all_map_information = used_object(person_information, action, all_map_information)
     # 寫入自己記憶
-    person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, "[oneself]")
+    person_information['memory'] = make_memory(person_information['memory'], None, current_time, action["action"], "[oneself]")
     # 寫入別人記憶
-    write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action, person_information['personality']['name'])
+    write_memory_for_all_observe(write_file_path, file_name, person_information['current_location'], action["action"], person_information['personality']['name'])
     # 寫入地圖記憶
-    all_map_information = write_map_observe(all_map_information, person_information, action)
+    all_map_information = write_map_observe(all_map_information, person_information, action["action"])
     # 想法生成
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     thought = thinking(person_information, observe, current_time)
@@ -76,11 +78,11 @@ def person_action(person_information, file_name, all_map_information):
 
     # 行程改變
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-    check_need_adjust = check_need_adjust_schedule(part_person_information, observe, current_time)
+    check_need_adjust = check_need_adjust_schedule(person_information, observe, current_time)
     if check_need_adjust:
         print("需要調整行程表")
-        adjusted_schedule = adjsut_schedule(part_person_information, observe, current_time)
-        part_person_information['schedule'] = adjusted_schedule['adjust_schedule']
+        adjusted_schedule = adjsut_schedule(person_information, observe, current_time)
+        person_information['schedule'] = adjusted_schedule['adjust_schedule']
 
     return person_information, observe, all_map_information
 

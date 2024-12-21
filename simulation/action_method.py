@@ -5,14 +5,14 @@ from config_new import *
 from action_method import *
 import copy
 
-# from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# MODEL = AutoModelForCausalLM.from_pretrained(
-#     model_name,
-#     torch_dtype="auto", 
-#     device_map="auto"
-# )
-# TOKENIZER = AutoTokenizer.from_pretrained(model_name)
+MODEL = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype="auto", 
+    device_map="auto"
+)
+TOKENIZER = AutoTokenizer.from_pretrained(model_name)
 
 def schedule_create(person_information, todaytime):
     check_json_format_flag = False
@@ -41,40 +41,8 @@ def action_design(person_information, current_time, observe, all_location_object
         action, times = make_design(MODEL, TOKENIZER, person_information['personality'], action_prompt)
         print("動作: {}".format(action))
         action, check_json_format_flag = check_json_format(action, check_json_format_flag)
-
     # print("執行時間:", times)
-    return action["action"]
-
-# 將動作轉換成地圖資料
-def transfer_action(action, map_info, location_list):
-    check_json_format_flag = False
-    transfor_prompt = transfor_action.format(action_content=action, location_list=location_list, map_object=map_info)+transfor_action_prompt
-
-    while(check_json_format_flag == False):
-        transfer_action, times = transfer_model(MODEL, TOKENIZER, transfor_prompt)
-        print("動作轉換: {}".format(transfer_action))
-        transfer_action, check_json_format_flag = check_json_format(transfer_action, check_json_format_flag)
-
-    # print("執行時間:", times)
-    return transfer_action
-
-# 是否換or加動作
-def change_action(person_information, current_time, observe, map_info):
-    check_json_format_flag = False
-    change_action_prompt = change_action_prefix.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_location=person_information["current_location"], 
-                         current_time=current_time,
-                         map=map_info)+change_action_profix
-    
-    while(check_json_format_flag == False):
-        action, times = make_design(MODEL, TOKENIZER, person_information['personality'], change_action_prompt)
-        print("動作: {}".format(action))
-        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
-
-    # print("執行時間:", times)
-    return action["action"]
+    return action
 
 # 生成想法
 def thinking(person_information, observe, current_time):

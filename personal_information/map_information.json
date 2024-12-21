@@ -12,7 +12,7 @@
         ]
     },
     "廁所": {
-        "廁所": "not_used",
+        "廁所": 1,
         "observe": [],
         "nearbyPersons": []
     },

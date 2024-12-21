@@ -45,14 +45,14 @@ def write_memory_for_all_observe(path: str, person_file_name: str, location: str
                     json.dump(person_information, f, ensure_ascii=False, indent=4)
 
 def write_map_observe(map_data, person_info, action):
-    map_data[person_info["current_location"]]['observe'].append({person_info['background']['name'] : action})
+    map_data[person_info["current_location"]]['observe'].append({person_info['personality']['name'] : action})
     
     for location, value in map_data.items():
         if "nearbyPersons" in value:
-            if person_info['background']['name'] in value['nearbyPersons']:
-                value['nearbyPersons'].remove(person_info['background']['name'])
+            if person_info['personality']['name'] in value['nearbyPersons']:
+                value['nearbyPersons'].remove(person_info['personality']['name'])
 
-    map_data[person_info["current_location"]]['nearbyPersons'].append(person_info['background']['name'])
+    map_data[person_info["current_location"]]['nearbyPersons'].append(person_info['personality']['name'])
     
     with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
         json.dump(map_data, f, ensure_ascii=False, indent=4)
@@ -97,9 +97,12 @@ def used_object(person_information, transfered_action, all_map_information):
     return person_information, all_map_information
 
 # 檢查動作是否有效
-def check_action_valid(action, all_location_object):
+def check_action_valid(action, all_location_object, all_map_information):
+    
     if action['location'] in all_location_object:
-        if action['object'] in all_location_object[action['location']] and all_location_object[action['location']][action['object']] > 0:
+        if action['object'] in all_location_object[action['location']] and all_map_information[action['location']][action['object']] > 0:
+            return True
+        elif action['object'] == None:
             return True
         else:
             return False
