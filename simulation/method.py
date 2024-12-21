@@ -87,23 +87,25 @@ def remove_observe(data):
     return data_without_observe, locations, all_location_information
 
 
-def used_object(person_information, transfered_action, all_map_information):
-    person_information["current_location"] = transfered_action["location"]
-    
-    if person_information["current_location"] in all_map_information:            
-        if transfered_action['object'] != 'None' and all_map_information[person_information["current_location"]][transfered_action['object']] > 0:
-            all_map_information[person_information["current_location"]][transfered_action['object']] -= 1
-    
+def used_object(person_information, action, all_map_information):
+    person_information['current_location'] = action['location']
+    if action['object'] != "Nothing":
+        all_map_information[person_information['current_location']][action['object']] -= 1
+    if len(person_information['current_object']) != 0 and person_information['current_object'] != "Nothing":
+        all_map_information[person_information['current_location']][person_information['current_object']] += 1
+    person_information['current_object'] = action['object']
     return person_information, all_map_information
 
 # 檢查動作是否有效
 def check_action_valid(action, all_location_object, all_map_information):
-    
     if action['location'] in all_location_object:
-        if action['object'] in all_location_object[action['location']] and all_map_information[action['location']][action['object']] > 0:
-            return True
-        elif action['object'] == None:
-            return True
+        if action['object'] in all_location_object[action['location']]:
+            if all_map_information[action['location']][action['object']] > 0:
+                return True, " 動作有效"
+            else:
+                return False, " 物件已經被占用"
+        elif action['object'] == "Nothing":
+            return True, " 沒有使用物件"
         else:
-            return False
-    return False
+            return False, " 物件不存在"
+    return False, " 地點不存在"

@@ -5,16 +5,6 @@ from config_new import *
 from action_method import *
 import copy
 
-# from transformers import AutoModelForCausalLM, AutoTokenizer
-
-# MODEL = AutoModelForCausalLM.from_pretrained(
-#     model_name,
-#     torch_dtype="auto", 
-#     device_map="auto"
-# )
-# TOKENIZER = AutoTokenizer.from_pretrained(model_name)
-
-
 # 行程表生成
 def daily_routine_create(path: str, todaytime: str):
     for file in os.listdir(path):
@@ -29,7 +19,7 @@ def daily_routine_create(path: str, todaytime: str):
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
-def map_setting(path: str, write_file_path: str):
+def person_in_map_setting(path: str, write_file_path: str):
     with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
         all_map_information = json.load(f)
 
@@ -48,20 +38,18 @@ def person_action(person_information, file_name, all_map_information):
     print(f"目前決定動作角色: {person_information['personality']['name']}")
     
     observe, data_without_observe, location_list, all_location_object, all_map_information = get_map_information(all_map_information, person_information)
-    print(f"目前all地圖資料: {all_map_information}")
-    print(f"location_list: {location_list}")
-    print(f"目前觀察: {observe}")
-    print(f"data_without_observe: {data_without_observe}")
-    print(f"目前地圖物件: {all_location_object}")
-    print("")
 
     # 動作決定
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     do_action = False
+    temp_memory = ""
     while(do_action == False):
-        action = action_design(person_information, current_time, observe, all_location_object, location_list, all_map_information[person_information['current_location']]['nearbyPersons'])
-        do_action = check_action_valid(action, all_location_object, all_map_information)
-        print(f"動作決定: {action}, {do_action}")
+        action = action_design(person_information, current_time, observe, all_location_object, location_list, all_map_information[person_information['current_location']]['nearbyPersons'], temp_memory)
+        do_action, action_message = check_action_valid(action, all_location_object, all_map_information)
+        print(f"動作決定: {action}, {do_action}, {action_message}")
+        if do_action == False:
+            temp_memory += action["action"] + action_message
+            time.sleep(1)
 
     # 由動作更新自己位置和使用物品
     person_information, all_map_information = used_object(person_information, action, all_map_information)
@@ -87,37 +75,41 @@ def person_action(person_information, file_name, all_map_information):
     return person_information, observe, all_map_information
 
 def all_person_action(write_file_path):
-    map_setting(file_path, write_file_path)
+    person_in_map_setting(file_path, write_file_path)
 
     with open(write_file_path+"map_information.json", "r", encoding="utf-8") as f:
         all_map_information = json.load(f)
         
     for file in os.listdir(write_file_path):
-        
         if file.startswith("p"):
-            c = 5
+            c = 1
             while(c>0):
                 with open(write_file_path+file, "r", encoding="utf-8") as f:
                     person_information = json.load(f)
                 
                 one_person_information = copy.deepcopy(person_information)
                 one_person_name = file
-                print(f"第{5-c}輪")
+                print(f"第{1-c}輪")
                 
                 part_person_information, observe, all_map_information = person_action(one_person_information, one_person_name, all_map_information)
 
+                # 寫入檔案
+                print(f"寫入檔案: {part_person_information,} \n {all_map_information}")
                 with open(write_file_path+file, "w", encoding="utf-8") as f:
                     json.dump(part_person_information, f, ensure_ascii=False, indent=4)
 
-                map_setting(write_file_path, write_file_path)
+                with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
+                    json.dump(all_map_information, f, ensure_ascii=False, indent=4)
+
+                # person_in_map_setting(write_file_path, write_file_path)
                 c-=1
 
             # 今天結束的反思
             person_reflection_info = person_reflection(person_information)
             print("-"*70)
 
-            with open(file_path+"map_information.json", "w", encoding="utf-8") as f:
-                json.dump(all_map_information, f, ensure_ascii=False, indent=4)
+            # with open(write_file_path+file, "w", encoding="utf-8") as f:
+            #     json.dump(part_person_information, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     # file_path 和 write_file_path只需要去config_new改就好

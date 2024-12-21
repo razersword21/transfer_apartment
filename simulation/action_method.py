@@ -26,9 +26,10 @@ def schedule_create(person_information, todaytime):
     return daily_schedule
 
 # 動作決定
-def action_design(person_information, current_time, observe, all_location_object, location_list, nearby_characters):
+def action_design(person_information, current_time, observe, all_location_object, location_list, nearby_characters, temp_memory):
     check_json_format_flag = False
     action_prompt = design_action.format(memory=person_information['memory'], 
+                         temp_memory=temp_memory,
                          schedule=person_information['schedule'], 
                          observes=observe, 
                          current_location=person_information["current_location"], 

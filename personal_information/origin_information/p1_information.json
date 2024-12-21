@@ -9,5 +9,6 @@
     },
     "schedule": [],
     "memory": "",
-    "current_location":"宿舍"
+    "current_location":"宿舍",
+    "current_object":""
 }
