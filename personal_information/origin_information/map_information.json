@@ -4,17 +4,20 @@
         "書桌": 3,
         "電腦": 2,
         "電視": 2,
-        "observe":[]
+        "observe":[],
+        "nearbyPersons":[]
     },
     "廁所":{
-        "廁所": 1,
-        "observe":[]
+        "廁所":"not_used",
+        "observe":[],
+        "nearbyPersons":[]
     },
     "餐廳":{
         "椅子": 4,
-        "observe":[]
+        "observe":[],
+        "nearbyPersons":[]
     },
-    "其他":{
+    "其他區域":{
         "observe":[]
     }
 }

@@ -4,16 +4,15 @@ from method import *
 from config_new import *
 from action_method import *
 import copy
-from queue_manager import model_queue
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+# from transformers import AutoModelForCausalLM, AutoTokenizer
 
-MODEL = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype="auto", 
-    device_map="auto"
-)
-TOKENIZER = AutoTokenizer.from_pretrained(model_name)
+# MODEL = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     torch_dtype="auto", 
+#     device_map="auto"
+# )
+# TOKENIZER = AutoTokenizer.from_pretrained(model_name)
 
 def schedule_create(person_information, todaytime):
     check_json_format_flag = False
@@ -27,14 +26,16 @@ def schedule_create(person_information, todaytime):
     return daily_schedule
 
 # 動作決定
-def action_design(person_information, current_time, observe, all_location_object):
+def action_design(person_information, current_time, observe, all_location_object, location_list, nearby_characters):
     check_json_format_flag = False
     action_prompt = design_action.format(memory=person_information['memory'], 
                          schedule=person_information['schedule'], 
                          observes=observe, 
                          current_location=person_information["current_location"], 
                          current_time=current_time,
-                         all_location_object=all_location_object)+design_action_prompt
+                         location_list=location_list,
+                         all_location_object=all_location_object,
+                         nearby_people=nearby_characters)+design_action_prompt
     
     while(check_json_format_flag == False):
         action, times = make_design(MODEL, TOKENIZER, person_information['personality'], action_prompt)

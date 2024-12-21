@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 from typing import Dict, List, Any
+from action_method import *
 
 class CharacterManager:
     def __init__(self, character_data: Dict):
@@ -9,18 +10,18 @@ class CharacterManager:
             character_data["personality"],
             character_data["schedule"]
         )
-        self.executor = ActionExecutor()
-        self.memory = MemorySystem()
+        self.memory = MemorySystem(character_data["memory"])
     
-    def update(self, map_data: Dict, character_location: str):
+    def character_action(self, map_data: Dict, character_location: str):
         """更新角色状态"""
         # 1. 环境感知
         perception_result = self.perception.update(map_data, character_location)
         
         # 2. 决策过程
-        situation = self.decision.evaluate_situation(perception_result)
-        options = self.decision.generate_options(situation)
-        selected_action = self.decision.select_action(options)
+        vaild_action_flag = False
+        while(vaild_action_flag == False):
+            selected_action = self.decision.decision_action(perception_result, self.memory, self.decision.current_schedule, map_data)
+            vaild_action_flag = self.check_action_validity(selected_action, map_data)
         
         # 3. 执行行动
         action_result = self.executor.execute_action(selected_action, map_data)
@@ -33,6 +34,17 @@ class CharacterManager:
         })
         
         return action_result
+
+    def check_action_validity(self, action: Dict, map_info: Dict) -> bool:
+        if action["location"] not in map_info:
+            return True
+        else:
+            map_data = map_info[action["location"]]
+            if action["object"] in map_data and map_data[action["object"]] > 0:
+                return True
+            else:
+                return False
+        
         
 class EnvironmentPerception:
     def __init__(self):
@@ -70,99 +82,15 @@ class DecisionSystem:
     def __init__(self, personality: Dict, schedule: Dict):
         self.personality = personality
         self.current_schedule = schedule
-        self.memory = []
-        self.goals: List[str] = []
-        self.action_weights = {
-            "schedule_priority": 0.4,
-            "personality_priority": 0.3,
-            "environment_priority": 0.3
-        }
-    
-    def evaluate_situation(self, perception: Dict) -> Dict:
-        """评估当前情况"""
-        current_time = perception["time"]
-        schedule_action = self._check_schedule(current_time)
-        environment_action = self._evaluate_environment(perception)
-        personality_action = self._consider_personality(perception)
         
-        return {
-            "schedule_based": schedule_action,
-            "environment_based": environment_action,
-            "personality_based": personality_action
-        }
-    
-    def generate_options(self, evaluation: Dict) -> List[Dict]:
-        """生成可能的行动选项"""
-        options = []
-        for action_type, action in evaluation.items():
-            weight = self.action_weights.get(action_type.split("_")[0] + "_priority", 0.2)
-            options.append({
-                "action": action,
-                "weight": weight,
-                "type": action_type
-            })
-        return options
-    
-    def select_action(self, options: List[Dict]) -> Dict:
-        """选择最终行动"""
-        # 根据权重选择行动
-        selected_action = max(options, key=lambda x: x["weight"])
-        return {
-            "action": selected_action["action"],
-            "reason": f"Based on {selected_action['type']}"
-        }
-    
-    def _check_schedule(self, current_time: str) -> str:
-        """检查当前时间表"""
-        current_hour = datetime.strptime(current_time, "%Y-%m-%d %A %H:%M").hour
-        for time_slot, activity in self.current_schedule.items():
-            schedule_hour = int(time_slot.split(":")[0])
-            if schedule_hour == current_hour:
-                return activity
-        return "空闲活动"
-    
-    def _evaluate_environment(self, perception: Dict) -> str:
-        """评估环境因素"""
-        if not perception["objects"] and not perception["characters"]:
-            return "探索环境"
+    def decision_action(self, perception_result: Dict, memory: str, schedule: Dict, map_info: Dict) -> Dict:
+        action = design_action_method(
+            self.personality, 
+            memory,
+            schedule
+        )
+        return action
         
-        if perception["characters"]:
-            return "与他人互动"
-            
-        return "使用周围物品"
-    
-    def _consider_personality(self, perception: Dict) -> str:
-        """考虑性格因素"""
-        personality_type = self.personality.get("type", "neutral")
-        if personality_type == "extrovert":
-            return "寻找社交机会"
-        elif personality_type == "introvert":
-            return "独处活动"
-        return "随机活动"
-
-class ActionExecutor:
-    def __init__(self):
-        self.current_action: Dict = None
-        self.action_status: str = "idle"
-        self.action_results: List[Dict] = []
-    
-    def execute_action(self, action: Dict, map_data: Dict) -> Dict:
-        """执行具体行动"""
-        self.current_action = action
-        self.action_status = "executing"
-        
-        # 执行行动并更新地图状态
-        result = self._perform_action(action, map_data)
-        
-        self.action_status = "completed"
-        self.action_results.append(result)
-        
-        return result
-    
-    def _perform_action(self, action: Dict, map_data: Dict) -> Dict:
-        """实际执行行动的具体逻辑"""
-        # 实现具体行动逻辑
-        pass
 
 class MemorySystem:
     def __init__(self, capacity: int = 100):

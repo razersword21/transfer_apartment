@@ -29,20 +29,40 @@ def daily_routine_create(path: str, todaytime: str):
             with open(write_file_path+file, "w", encoding="utf-8") as f:
                 json.dump(person_information, f, ensure_ascii=False, indent=4)
 
+def map_setting(path: str, write_file_path: str):
+    with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
+        all_map_information = json.load(f)
+
+    for file in os.listdir(path):
+        if file.startswith("p"):
+            with open(path+file, "r", encoding="utf-8") as f:
+                person_information = json.load(f)
+            if person_information['current_location'] in all_map_information:
+                all_map_information[person_information['current_location']]['nearbyPersons'].append(person_information['personality']['name'])
+
+    with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
+        json.dump(all_map_information, f, ensure_ascii=False, indent=4)
+
 # 單人動作決定鍊
 def person_action(person_information, file_name, all_map_information):
-    print(f"目前角色: {person_information['personality']['name']}")
+    print(f"目前決定動作角色: {person_information['personality']['name']}")
     
-    observe, map_info, location_list, all_location_object, all_map_information = get_map_information(all_map_information, person_information)
+    observe, data_without_observe, location_list, all_location_object, all_map_information = get_map_information(all_map_information, person_information)
+    print(f"目前all地圖資料: {all_map_information}")
+    print(f"location_list: {location_list}")
+    print(f"目前觀察: {observe}")
+    print(f"data_without_observe: {data_without_observe}")
+    print(f"目前地圖物件: {all_location_object}")
+
     # 動作決定
     current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
     do_action = False
     while(do_action == False):
-        action = action_design(person_information, current_time, observe, all_location_object)
+        action = action_design(person_information, current_time, observe, all_location_object, location_list, all_location_information[person_information['current_location']]['nearbyPersons'])
         do_action = check_action_valid(action, all_map_information)
 
     # 由動作更新自己位置和使用物品
-    person_information, all_map_information = get_current_location_and_used_object(person_information, action, all_map_information)
+    person_information, all_map_information = used_object(person_information, action, all_map_information)
     # 寫入自己記憶
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, action, "[oneself]")
     # 寫入別人記憶
@@ -54,13 +74,24 @@ def person_action(person_information, file_name, all_map_information):
     thought = thinking(person_information, observe, current_time)
     person_information['memory'] = make_memory(person_information['memory'], None, current_time, thought, "[thought]")
 
+    # 行程改變
+    current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
+    check_need_adjust = check_need_adjust_schedule(part_person_information, observe, current_time)
+    if check_need_adjust:
+        print("需要調整行程表")
+        adjusted_schedule = adjsut_schedule(part_person_information, observe, current_time)
+        part_person_information['schedule'] = adjusted_schedule['adjust_schedule']
+
     return person_information, observe, all_map_information
 
 def all_person_action(write_file_path):
-    with open(file_path+"map_information.json", "r", encoding="utf-8") as f:
+    map_setting(file_path, write_file_path)
+
+    with open(write_file_path+"map_information.json", "r", encoding="utf-8") as f:
         all_map_information = json.load(f)
         
     for file in os.listdir(write_file_path):
+        
         if file.startswith("p"):
             c = 5
             while(c>0):
@@ -76,17 +107,7 @@ def all_person_action(write_file_path):
                 with open(write_file_path+file, "w", encoding="utf-8") as f:
                     json.dump(part_person_information, f, ensure_ascii=False, indent=4)
 
-                # 行程改變
-                current_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A %H:%M")
-                check_need_adjust = check_need_adjust_schedule(part_person_information, observe, current_time)
-                if check_need_adjust:
-                    print("需要調整行程表")
-                    adjusted_schedule = adjsut_schedule(part_person_information, observe, current_time)
-                    part_person_information['schedule'] = adjusted_schedule['adjust_schedule']
-
-                    with open(write_file_path+file, "w", encoding="utf-8") as f:
-                        json.dump(part_person_information, f, ensure_ascii=False, indent=4)
-                
+                map_setting(write_file_path, write_file_path)
                 c-=1
 
             # 今天結束的反思
@@ -100,11 +121,11 @@ if __name__ == "__main__":
     # file_path 和 write_file_path只需要去config_new改就好
     
     # 生成行程表
-    today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
-    daily_routine_create(file_path, today_time)
+    # today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
+    # daily_routine_create(file_path, today_time)
 
     print()
     print("="*70)
     print()
     # 決定動作並寫入記憶
-    # all_person_action(write_file_path)
+    all_person_action(write_file_path)
