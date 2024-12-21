@@ -1,3 +1,5 @@
 testenv/
 __pycache__/
 *__pycache__/
+personal_information/
+personal_information/*

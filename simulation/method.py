@@ -97,3 +97,16 @@ def check_action_valid(action, all_location_object):
         return True
     else:
         return False
+
+def retrieval_func(memory: str, top_k: int = 3) -> str:
+    """
+    从记忆中检索最相关的前k个记忆
+    Args:
+        memory (str): 原始记忆字符串，每行一个记忆
+        top_k (int): 需要返回的记忆数量
+    Returns:
+        str: 筛选后的记忆字符串，格式与输入相同
+    """
+    # TODO: 实现具体的检索逻辑
+    # 目前简单返回原始记忆
+    return memory

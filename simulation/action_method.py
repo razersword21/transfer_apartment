@@ -3,8 +3,6 @@ from prompt_new import *
 from method import *
 from config_new import *
 from action_method import *
-import copy
-from queue_manager import model_queue
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -29,7 +27,10 @@ def schedule_create(person_information, todaytime):
 # 動作決定
 def action_design(person_information, current_time, observe, all_location_object):
     check_json_format_flag = False
-    action_prompt = design_action.format(memory=person_information['memory'], 
+    # 使用检索函数获取相关记忆
+    relevant_memory = retrieval_func(person_information['memory'])
+    
+    action_prompt = design_action.format(memory=relevant_memory,  # 使用检索后的记忆
                          schedule=person_information['schedule'], 
                          observes=observe, 
                          current_location=person_information["current_location"], 
@@ -78,7 +79,10 @@ def change_action(person_information, current_time, observe, map_info):
 # 生成想法
 def thinking(person_information, observe, current_time):
     check_json_format_flag = False
-    think_prompt = create_thought.format(memory=person_information['memory'],
+    # 使用检索函数获取相关记忆
+    relevant_memory = retrieval_func(person_information['memory'])
+    
+    think_prompt = create_thought.format(memory=relevant_memory,  # 使用检索后的记忆
                          observes=observe,
                          current_location=person_information["current_location"],
                          current_time=current_time)+create_thought_prompt
@@ -94,7 +98,10 @@ def thinking(person_information, observe, current_time):
 # 判斷是否要調行程表
 def check_need_adjust_schedule(person_information, observe, current_time):
     check_json_format_flag = False
-    check_need_adjust_prompt = check_adjust.format(memory=person_information['memory'], 
+    # 使用检索函数获取相关记忆
+    relevant_memory = retrieval_func(person_information['memory'])
+    
+    check_need_adjust_prompt = check_adjust.format(memory=relevant_memory,  # 使用检索后的记忆
                          schedule=person_information['schedule'], 
                          observes=observe, 
                          current_time=current_time)+check_adjust_prompt

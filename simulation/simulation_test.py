@@ -100,11 +100,11 @@ if __name__ == "__main__":
     # file_path 和 write_file_path只需要去config_new改就好
     
     # 生成行程表
-    today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
-    daily_routine_create(file_path, today_time)
+    #today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
+    #daily_routine_create(file_path, today_time)
 
     print()
     print("="*70)
     print()
     # 決定動作並寫入記憶
-    # all_person_action(write_file_path)
+    all_person_action(write_file_path)
