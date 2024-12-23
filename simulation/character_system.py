@@ -2,146 +2,129 @@ from datetime import datetime
 import json
 from typing import Dict, List, Any
 from action_method import *
+from method import *
+from config_new import *
 
 class CharacterManager:
     def __init__(self, character_data: Dict):
-        self.perception = EnvironmentPerception()
         self.decision = DecisionSystem(
             character_data["personality"],
             character_data["schedule"]
         )
-        self.memory = MemorySystem(character_data["memory"])
+        self.memory = MemorySystem(memory=character_data["memory"], capacity=100)
+        self.current_location = character_data["current_location"]
+        self.current_object = character_data["current_object"]
+        self.name = character_data['personality']["name"]
     
-    def character_action(self, map_data: Dict, character_location: str):
+        
+    def character_action(self, map_data: Dict):
         """更新角色状态"""
         # 1. 环境感知
-        perception_result = self.perception.update(map_data, character_location)
-        
-        # 2. 决策过程
-        vaild_action_flag = False
-        while(vaild_action_flag == False):
-            selected_action = self.decision.decision_action(perception_result, self.memory, self.decision.current_schedule, map_data)
-            vaild_action_flag = self.check_action_validity(selected_action, map_data)
-        
-        # 3. 执行行动
-        action_result = self.executor.execute_action(selected_action, map_data)
-        
-        # 4. 记录记忆
-        self.memory.record_event({
-            "action": selected_action,
-            "result": action_result,
-            "perception": perception_result
-        })
-        
-        return action_result
-
-    def check_action_validity(self, action: Dict, map_info: Dict) -> bool:
-        if action["location"] not in map_info:
-            return True
-        else:
-            map_data = map_info[action["location"]]
-            if action["object"] in map_data and map_data[action["object"]] > 0:
-                return True
-            else:
-                return False
-        
-        
-class EnvironmentPerception:
-    def __init__(self):
-        self.current_location: str = None
-        self.surrounding_objects: Dict[str, int] = {}  # 物品名称和数量
-        self.nearby_characters: List[str] = []  # 附近的角色
-        self.time_info: str = None
-        self.observe_history: List[str] = []  # 观察历史
-    
-    def update(self, map_data: Dict, character_location: str) -> Dict:
-        """更新环境信息"""
-        self.current_location = character_location
-        self.time_info = datetime.now().strftime("%Y-%m-%d %A %H:%M")
-        
-        if character_location in map_data:
-            location_data = map_data[character_location]
-            self.surrounding_objects = {
-                k: v for k, v in location_data.items() 
-                if k != "observe"
-            }
-            self.nearby_characters = [
-                obs.split()[0] for obs in location_data.get("observe", [])
-            ]
-            self.observe_history = location_data.get("observe", [])
-        
-        return {
-            "location": self.current_location,
-            "objects": self.surrounding_objects,
-            "characters": self.nearby_characters,
-            "time": self.time_info,
-            "observations": self.observe_history
+        map_information = {
+            "observe": map_data[self.current_location]['observe'],
+            "location_list": map_data[self.current_location]['location_list'],
+            "all_location_object": map_data[self.current_location]['all_location_object'],
+            "nearby_characters": map_data[self.current_location]['nearbyPersons']
         }
+
+        # 2. 決策
+        do_action = False
+        temp_memory = ""
+        while not do_action:
+            action = self.decision.decision_action(memory, self.current_location, map_information, temp_memory)
+            do_action, action_message = check_action_valid(action, map_data)
+            if do_action == False:
+                temp_memory += action["action"] + action_message
+                time.sleep(1)
+        
+        # 3. 執行動作後更新角色狀態
+        self.current_location = action["location"]
+        if action['object'] != "Nothing":
+            map_data[self.current_location][action['object']] -= 1
+        if len(self.current_object) != 0 and self.current_object != "Nothing":
+            map_data[self.current_location][self.current_object] += 1
+        
+        self.current_object = action['object']
+        
+        return map_data
 
 class DecisionSystem:
     def __init__(self, personality: Dict, schedule: Dict):
         self.personality = personality
         self.current_schedule = schedule
-        
-    def decision_action(self, perception_result: Dict, memory: str, schedule: Dict, map_info: Dict) -> Dict:
+
+    def init_schedule(self, person_memory: str) -> None:
+        today_time = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %A")
+        self.current_schedule = schedule_create_method(self.personality, person_memory, today_time)['today_schedule']
+
+    def decision_action(self, memory, current_location, map_information) -> Dict:
+        """决策行动"""
+        current_time = datetime.now().strftime("%Y-%m-%d %A %H:%M")
         action = design_action_method(
-            self.personality, 
+            self.personality,
             memory,
-            schedule
+            self.current_schedule,
+            map_information["observe"],
+            current_location,
+            current_time,
+            map_information["location_list"],
+            map_information["all_location_object"],
+            map_information["nearby_characters"]
         )
         return action
         
-
 class MemorySystem:
-    def __init__(self, capacity: int = 100):
+    def __init__(self, memory: str, capacity: int = 100):
         self.short_term: List[Dict] = []  # 短期记忆
         self.long_term: List[Dict] = []   # 长期记忆
-        self.emotional_memory: Dict[str, List[Dict]] = {}  # 情感记忆
+        self.person_memory = memory  # 人物记忆
         self.capacity = capacity
     
-    def record_event(self, event: Dict):
-        """记录事件"""
-        # 添加时间戳
-        event["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # 记录到短期记忆
-        self.short_term.append(event)
-        
-        # 如果有情感标记，记录到情感记忆
-        if "emotion" in event:
-            emotion = event["emotion"]
-            if emotion not in self.emotional_memory:
-                self.emotional_memory[emotion] = []
-            self.emotional_memory[emotion].append(event)
-        
+    def record_event(self, person_name:str, time: str, content: str, label: str):
+        if person_name is None:
+            self.person_memory += time+" "+label+content+"\n"
+        else:
+            self.person_memory += time+" "+label+person_name+content+"\n"
         # 管理记忆容量
         self._manage_memory_capacity()
     
     def retrieve_relevant_memory(self, context: Dict) -> List[Dict]:
-        """检索相关记忆"""
-        relevant_memories = []
-        
-        # 基于上下文检索记忆
-        keywords = context.get("keywords", [])
-        location = context.get("location")
-        time_range = context.get("time_range")
-        
-        # 实现记忆检索逻辑
-        return relevant_memories
+        pass
     
     def _manage_memory_capacity(self):
         """管理记忆容量"""
-        if len(self.short_term) > self.capacity:
+        if len(self.person_memory) > self.capacity:
             # 将旧的短期记忆转移到长期记忆
-            oldest_memory = self.short_term.pop(0)
+            oldest_memory = self.person_memory.pop(0)
             self.long_term.append(oldest_memory)
+
+
+class MapManager:
+    def __init__(self):
+        self.map_data: Dict[str, Dict] = {}
+
+    def load_map(self, write_file_path: str):
+        """加载地图数据"""
+        # 从文件或数据库加载地图数据
+        with open(write_file_path+"map_information.json", "r", encoding="utf-8") as f:
+            self.map_data = json.load(f)
+
+    def get_map_data(self, location: str) -> Dict:
+        """获取指定位置的地图数据"""
+        return self.map_data.get(location, {})
     
-    def get_formatted_memory(self) -> str:
-        """返回格式化的记忆字符串"""
-        formatted_memory = ""
-        for memory in self.short_term:
-            formatted_memory += f"{memory['time']} {memory['label']}"
-            if memory.get('person'):
-                formatted_memory += memory['person']
-            formatted_memory += f"{memory['content']}\n"
-        return formatted_memory
+    def get_list_of_locations(self) -> List[str]:
+        """获取地图中所有位置的列表"""
+        return list(self.map_data.keys())
+
+    def get_list_of_all_objects(self) -> Dict[str, List[str]]:
+        """获取地图中所有物品的列表"""
+        all_objects = {}
+        for location, items in self.map_data.items():
+            all_objects[location] = [key for key in items.keys() if key not in ["observe", "nearbyPersons"]]
+        return all_objects
+
+    def map_default_setting(self, character1, character2, character3):
+        for character in [character1, character2, character3]:
+            if character.current_location in self.map_data:
+                self.map_data[character.current_location]['nearbyPersons'].append(character.name)

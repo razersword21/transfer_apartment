@@ -97,10 +97,10 @@ def used_object(person_information, action, all_map_information):
     return person_information, all_map_information
 
 # 檢查動作是否有效
-def check_action_valid(action, all_location_object, all_map_information):
-    if action['location'] in all_location_object:
-        if action['object'] in all_location_object[action['location']]:
-            if all_map_information[action['location']][action['object']] > 0:
+def check_action_valid(self, action, map_information):
+    if action['location'] in map_information:
+        if action['object'] in map_information[action['location']]:
+            if map_information[action['location']][action['object']] > 0:
                 return True, " 動作有效"
             else:
                 return False, " 物件已經被占用"

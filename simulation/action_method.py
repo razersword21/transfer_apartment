@@ -25,6 +25,17 @@ def schedule_create(person_information, todaytime):
 
     return daily_schedule
 
+def schedule_create_method(personality, person_memory, todaytime):
+    check_json_format_flag = False
+    daily_prompt = daily_routine.format(memory=person_memory, current_time=todaytime)+daily_routine_prompt
+
+    while(check_json_format_flag == False):
+        daily_schedule, times = make_design(MODEL, TOKENIZER, personality, daily_prompt)
+        print("行程表: {}".format(daily_schedule))
+        daily_schedule, check_json_format_flag = check_json_format(daily_schedule, check_json_format_flag)
+
+    return daily_schedule
+
 # 動作決定
 def action_design(person_information, current_time, observe, all_location_object, location_list, nearby_characters, temp_memory):
     check_json_format_flag = False
@@ -43,7 +54,45 @@ def action_design(person_information, current_time, observe, all_location_object
         print("動作: {}".format(action))
         action, check_json_format_flag = check_json_format(action, check_json_format_flag)
     # print("執行時間:", times)
-    return action
+    return action["action"]
+
+def design_action_method(personality, memory, schedule, observe, current_location, current_time, location_list, all_location_object, nearby_characters, temp_memory):
+    check_json_format_flag = False
+    action_prompt = design_action.format(memory=person_information['memory'], 
+                         temp_memory=temp_memory,
+                         schedule=person_information['schedule'], 
+                         observes=observe, 
+                         current_location=person_information["current_location"], 
+                         current_time=current_time,
+                         location_list=location_list,
+                         all_location_object=all_location_object,
+                         nearby_people=nearby_characters)+design_action_prompt
+    
+    while(check_json_format_flag == False):
+        action, times = make_design(MODEL, TOKENIZER, personality, action_prompt)
+        print("動作: {}".format(action))
+        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
+
+    # print("執行時間:", times)
+    return action["action"]
+
+# 是否換or加動作
+def change_action(person_information, current_time, observe, map_info):
+    check_json_format_flag = False
+    change_action_prompt = change_action_prefix.format(memory=person_information['memory'], 
+                         schedule=person_information['schedule'], 
+                         observes=observe, 
+                         current_location=person_information["current_location"], 
+                         current_time=current_time,
+                         map=map_info)+change_action_profix
+    
+    while(check_json_format_flag == False):
+        action, times = make_design(MODEL, TOKENIZER, person_information['personality'], change_action_prompt)
+        print("動作: {}".format(action))
+        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
+
+    # print("執行時間:", times)
+    return action["action"]
 
 # 生成想法
 def thinking(person_information, observe, current_time):

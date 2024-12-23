@@ -1,34 +1,23 @@
 {
-    "宿舍": {
-        "床": 2,
+    "宿舍":{
+        "床": 3,
         "書桌": 3,
         "電腦": 2,
         "電視": 2,
-        "observe": [
-            {
-                "陳宇翔": "開始閱讀書籍"
-            },
-            {
-                "李子建": "繼續閱讀書籍"
-            }
-        ],
-        "nearbyPersons": [
-            "王浩然",
-            "陳宇翔",
-            "李子建"
-        ]
+        "observe":[],
+        "nearbyPersons":[]
     },
-    "廁所": {
+    "廁所":{
         "廁所": 1,
-        "observe": [],
-        "nearbyPersons": []
+        "observe":[],
+        "nearbyPersons":[]
     },
-    "餐廳": {
+    "餐廳":{
         "椅子": 4,
-        "observe": [],
-        "nearbyPersons": []
+        "observe":[],
+        "nearbyPersons":[]
     },
-    "其他區域": {
-        "observe": []
+    "其他區域":{
+        "observe":[]
     }
 }
