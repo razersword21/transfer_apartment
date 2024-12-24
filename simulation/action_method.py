@@ -2,17 +2,20 @@ from model import *
 from prompt_new import *
 from method import *
 from config_new import *
-from action_method import *
 import copy
+import json
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+# import intel_npu_acceleration_library
 
 MODEL = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype="auto", 
-    device_map="auto"
-)
-TOKENIZER = AutoTokenizer.from_pretrained(model_name)
+    use_cache=True
+).eval()
+# print("Compile model for the NPU")
+# MODEL = torch.compile(MODEL, backend="npu")
+TOKENIZER = AutoTokenizer.from_pretrained(model_name, use_default_system_prompt=False)
 
 def schedule_create(person_information, todaytime):
     check_json_format_flag = False
@@ -56,43 +59,30 @@ def action_design(person_information, current_time, observe, all_location_object
     # print("執行時間:", times)
     return action["action"]
 
-def design_action_method(personality, memory, schedule, observe, current_location, current_time, location_list, all_location_object, nearby_characters, temp_memory):
+def design_action_method(personality, memory, temp_memory, schedule, observe, current_location, current_time, location_list, all_location_object, nearby_characters):
     check_json_format_flag = False
-    action_prompt = design_action.format(memory=person_information['memory'], 
+    nearby_people = copy.deepcopy(nearby_characters)
+    nearby_people.remove(personality["name"])
+
+    action_prompt = design_action.format(memory=memory, 
                          temp_memory=temp_memory,
-                         schedule=person_information['schedule'], 
+                         schedule=schedule, 
                          observes=observe, 
-                         current_location=person_information["current_location"], 
+                         current_location=current_location, 
                          current_time=current_time,
                          location_list=location_list,
                          all_location_object=all_location_object,
-                         nearby_people=nearby_characters)+design_action_prompt
+                         nearby_people=nearby_people)+design_action_prompt
     
+    device = next(MODEL.parameters()).device
+    print(f"模型所在設備: {device}")
     while(check_json_format_flag == False):
         action, times = make_design(MODEL, TOKENIZER, personality, action_prompt)
         print("動作: {}".format(action))
         action, check_json_format_flag = check_json_format(action, check_json_format_flag)
 
     # print("執行時間:", times)
-    return action["action"]
-
-# 是否換or加動作
-def change_action(person_information, current_time, observe, map_info):
-    check_json_format_flag = False
-    change_action_prompt = change_action_prefix.format(memory=person_information['memory'], 
-                         schedule=person_information['schedule'], 
-                         observes=observe, 
-                         current_location=person_information["current_location"], 
-                         current_time=current_time,
-                         map=map_info)+change_action_profix
-    
-    while(check_json_format_flag == False):
-        action, times = make_design(MODEL, TOKENIZER, person_information['personality'], change_action_prompt)
-        print("動作: {}".format(action))
-        action, check_json_format_flag = check_json_format(action, check_json_format_flag)
-
-    # print("執行時間:", times)
-    return action["action"]
+    return action
 
 # 生成想法
 def thinking(person_information, observe, current_time):
@@ -107,6 +97,20 @@ def thinking(person_information, observe, current_time):
         print("想法: {}".format(think))
         think, check_json_format_flag = check_json_format(think, check_json_format_flag)
 
+    print("執行時間:", times)
+    return think["thought"]
+
+def thinking_method(memory, observe, current_location, current_time):
+    check_json_format_flag = False
+    think_prompt = create_thought.format(memory=memory,
+                         observes=observe,
+                         current_location=current_location,
+                         current_time=current_time)+create_thought_prompt
+
+    while(check_json_format_flag == False):
+        think, times = make_design(MODEL, TOKENIZER, personality, think_prompt)
+        print("想法: {}".format(think))
+        think, check_json_format_flag = check_json_format(think, check_json_format_flag)
     print("執行時間:", times)
     return think["thought"]
 
@@ -126,6 +130,20 @@ def check_need_adjust_schedule(person_information, observe, current_time):
     print("執行時間:", times)
     return check_need_adjust["need_adjust"]
 
+def check_need_adjust_schedule_method(memory, schedule, observe, current_time):
+    check_json_format_flag = False
+    check_need_adjust_prompt = check_adjust.format(memory=memory,
+                         schedule=schedule,
+                         observes=observe,
+                         current_time=current_time)+check_adjust_prompt
+
+    while(check_json_format_flag == False):
+        check_need_adjust, times = make_design(MODEL, TOKENIZER, personality, check_need_adjust_prompt)
+        print("判斷是否要調行程表: {}".format(check_need_adjust.lower()))
+        check_need_adjust, check_json_format_flag = check_json_format(check_need_adjust.lower(), check_json_format_flag)
+    print("執行時間:", times)
+    return check_need_adjust["need_adjust"]
+
 # 修正行程表
 def adjsut_schedule(person_information, observe, current_time):
     check_json_format_flag = False
@@ -141,6 +159,34 @@ def adjsut_schedule(person_information, observe, current_time):
 
     print("執行時間:", times)
     return adjsuted_schedule["adjust_schedule"]
+
+def adjsut_schedule_method(memory, schedule, observe, current_time):
+    check_json_format_flag = False
+    adjsut_schedule_prompt = adjust_routine.format(memory=memory,
+                         schedule=schedule,
+                         observes=observe,
+                         current_time=current_time)+adjust_routine_prompt
+    while(check_json_format_flag == False):
+        adjsuted_schedule, times = make_design(MODEL, TOKENIZER, personality, adjsut_schedule_prompt)
+        print("修改行程表: {}".format(adjsuted_schedule))
+        adjsuted_schedule, check_json_format_flag = check_json_format(adjsuted_schedule, check_json_format_flag)
+    print("執行時間:", times)
+    return adjsuted_schedule["adjust_schedule"]
+
+def create_dialogue_method(personality, interactive_character, memory,  observe, current_location, current_time, dialogue_history):
+    check_json_format_flag = False
+    dialogue_prompt = create_dialogue.format(interactive_character=interactive_character,
+                         memory=memory,
+                         observes=observe,
+                         current_location=current_location,
+                         current_time=current_time,
+                         dialogue_history=dialogue_history)+create_dialogue_prompt
+    while(check_json_format_flag == False):
+        dialogue, times = make_design(MODEL, TOKENIZER, personality, dialogue_prompt)
+        print("對話: {}".format(dialogue))
+        dialogue, check_json_format_flag = check_json_format(dialogue, check_json_format_flag)
+    print("執行時間:", times)
+    return dialogue["dialogue"]
 
 def person_reflection(person_information):
     check_json_format_flag = False

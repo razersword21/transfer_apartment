@@ -97,15 +97,28 @@ def used_object(person_information, action, all_map_information):
     return person_information, all_map_information
 
 # 檢查動作是否有效
-def check_action_valid(self, action, map_information):
+def check_action_valid(action, map_information):
     if action['location'] in map_information:
         if action['object'] in map_information[action['location']]:
             if map_information[action['location']][action['object']] > 0:
-                return True, " 動作有效"
+                if action['person'] != "Nothing":
+                    if action['person'] in map_information[action['location']]['nearbyPersons']:
+                        return True, " 動作有效"
+                    else:
+                        return False, f" {action['person']}沒有在附近"
+                else:
+                    return True, " 動作有效"
             else:
                 return False, " 物件已經被占用"
         elif action['object'] == "Nothing":
-            return True, " 沒有使用物件"
+            if action['person'] != "Nothing":
+                if action['person'] in map_information[action['location']]['nearbyPersons']:
+                    return True, " 動作有效"
+                else:
+                    return False, f" {action['person']}沒有在附近"
+            else:
+                return True, " 沒有使用物件"
         else:
             return False, " 物件不存在"
+    
     return False, " 地點不存在"
