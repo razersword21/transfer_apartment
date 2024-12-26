@@ -217,3 +217,27 @@ def person_reflection(person_information):
 
     print("執行時間:", times)
     return person_reflection_info
+
+def personality_reflection_method(personality, memory):
+    check_json_format_flag = False
+    personality_reflection_prompt = reflection.format(person_info=personality,
+                                                       memory=memory)+reflection_prompt
+    while(check_json_format_flag == False):
+        personality_reflection_info, times = make_design(MODEL, TOKENIZER, personality, personality_reflection_prompt)
+        print("反思人物資料: {}".format(personality_reflection_info))
+        personality_reflection_info, check_json_format_flag = check_json_format(personality_reflection_info, check_json_format_flag)
+
+    print("執行時間:", times)
+    return personality_reflection_info
+
+def character_relation_thinking_method(personality, relation_person_name, origin_realationship, memory):
+    check_json_format_flag = False
+    character_relation_thinking_prompt = relation_think.format(person_name=relation_person_name,
+                                                                origin_relationship=origin_realationship,
+                                                                memory=memory)+relation_think_prompt
+    while(check_json_format_flag == False):
+        character_relation_thinking_info, times = make_design(MODEL, TOKENIZER, personality, character_relation_thinking_prompt)
+        print("反思人物關係: {}".format(character_relation_thinking_info))
+        character_relation_thinking_info, check_json_format_flag = check_json_format(character_relation_thinking_info, check_json_format_flag)
+    print("執行時間:", times)
+    return character_relation_thinking_info['relation']

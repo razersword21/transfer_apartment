@@ -78,13 +78,16 @@ def main():
             interactive_character.status = ""
 
         character1.character_thinking()
-        character1.check_adjust_schedule(map_manager.map_data)
+        character1.character_adjust_schedule(map_manager.map_data)
 
         # 還沒寫提示詞等內容
         map_data, action = character1.character_reaction(event_content, location_list, all_location_object, map_manager.map_data)
         map_manager.update_map_data(map_data)
 
-        # 還沒寫反思內容
+        # 反思內容
+        relation_person_list = [character_dict[person] for person in character_dict.keys() if person != character1.name]
+        for person in relation_person_list:
+            character1.character_relation_thinking(person)
 
 if __name__ == "__main__":
     main()

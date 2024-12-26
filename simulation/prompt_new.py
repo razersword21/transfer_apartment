@@ -143,7 +143,7 @@ create_dialogue = """<談話對象>{interactive_character}</談話對象>
 <對話內容>{dialogue_history}</對話內容>"""
 create_dialogue_prompt = """根據你的人物背景和提供的所有資訊，特別是參考"對話歷史"，生成你想說的話，遵循以下"對話規則"
 <對話規則>
-- 若要結束聊天則結果回傳"<結束對話>"
+- 若要結束聊天則結果回傳"<stop_dialogue>"
 - 使用繁體中文
 </對話規則>
 以json回傳，回傳範例格式如下:
@@ -169,14 +169,12 @@ organize_prompt = """根據你的人物背景和提供的所有資訊，將其�
 """
 
 reflection = """<人物資訊>{person_info}</人物資訊>
-<人物記憶>{memory}</人物記憶>
-<觀察事項>{observes}</觀察事項>"""
+<人物記憶>{memory}</人物記憶>"""
 reflection_prompt = """根據今天發生的"人物記憶"以及你的人物資訊，反思你的人物背景資訊使否有需要調整或補充的地方，針對其中職業、興趣、人物特質、角色描述和人際關係進行判別，遵循以下"反思改動規則"
 <反思改動規則>
 - 若判斷無須改動或補充，則回傳原本描述內容
 - 改動幅度不能太大
 - 若"character_description"有需要補充內容，可改寫"character_description"
-- 若有新認識的人，在人際關係列表中添加，其格式為{"name":"人名","relationship":"你認為與該人物的關係"}，僅從人物記憶中的人名挑選，不要包含自己，若無則回傳空陣列
 - 使用繁體中文
 </反思改動規則>
 以json回傳，回傳範例格式如下:
@@ -184,6 +182,20 @@ reflection_prompt = """根據今天發生的"人物記憶"以及你的人物資�
     "job_occupation": "",
     "interests": "",
     "personality": "",
-    "character_description": "",
-    "interpersonal_relationships": []
+    "character_description": ""
 }"""
+
+relation_think = """<對象名稱>{person_name}</對象名稱>
+<原本關係>{origin_relationship}</原本關係>
+<人物記憶>{memory}</人物記憶>"""
+relation_think_prompt = """根據提供的"人物記憶"，判斷你對"對象名稱"的關係，回傳關係名稱，遵循以下"關係判別規則"
+<關係判別規則>
+- 回傳的關係名稱必須簡短(盡量不要超過4個字)
+- 使用繁體中文
+</關係判別規則>
+以json回傳，
+回傳範例格式如下:
+{
+    "relation": ""
+}
+不要包含其他內容"""

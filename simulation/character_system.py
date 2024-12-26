@@ -92,7 +92,7 @@ class CharacterManager:
         )
         dialogue_history.append({self.name: dialogue_content})
         stop_dialogue = False
-        if dialogue_content == "<結束對話>":
+        if dialogue_content == "<stop_dialogue>":
             stop_dialogue = True
         return dialogue_history, stop_dialogue
 
@@ -105,6 +105,11 @@ class CharacterManager:
         if self.decision.check_need_adjust_schedule(self.memory_system.person_memory, map_information['observe'], current_time):
             self.decision.adjust_schedule(self.memory_system.person_memory, map_information['observe'], current_time)
 
+    def character_reflection_personality(self, memory):
+        self.decision.personality_reflection(memory)
+
+    def character_relationship_thinking(self, person_name, memory):
+        relationship = self.decision.character_relation_thinking(person_name, memory)
 
     def update_character_location(self, action, map_data):
         """更新角色位置"""
@@ -202,7 +207,20 @@ class DecisionSystem:
         )
         return dialogue
 
+    def personality_reflection(self, memory):
+        """性格反思"""
+        self.personality = personality_reflection_method(self.personality, memory)
+
+    def character_relation_thinking(self, relation_person, memory):
+        """角色关系思考"""
+        relationship = copy.deepcopy(self.personality["relationship"])
+        personality_relation = character_relation_thinking_method(self.personality, relation_person.name, self.personality["relationship"].get(relation_person, ""), memory)
         
+        # 清除原本的关系
+        self.personality["relationship"] = [r for r in relationship if relation_person.name not in r]  # 移除与relation_person的关系
+        
+        self.personality["relationship"].append({relation_person.name: personality_relation})
+
 class MemorySystem:
     def __init__(self, memory: str, capacity: int = 100):
         self.short_term: List[Dict] = []  # 短期记忆
