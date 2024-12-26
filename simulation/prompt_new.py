@@ -39,8 +39,7 @@ design_action_prompt = """根據提供"人物記憶"、"人物行程"、"觀察�
 - "location"應該從"地點列表"中選一個，並跟動作內容有關，例如"去廁所"應該選擇"廁所"
 - 動作應在合適的地點與合理的互動物件互動，例如"去廁所"應該選擇"廁所"
 - 若有使用物件則"object"回傳"地點物件資訊"中的物件名稱，若無與物件互動，"object"回傳"Nothing"
-- 若有與"周圍人物"開啟談話則"person"回傳"周圍人物"中的人名，若無與他人開啟談話，"person"回傳"Nothing"，一次只能與一個人物開啟談話
-- 動作描述應包含"object"和"person"，除非"object"和"person"都為"Nothing"
+- 動作描述應包含"object"，除非"object"為"Nothing"
 - 使用繁體中文
 <動作決定規則>
 "地點物件資訊"表示地圖中所有地點和各地點的物件資訊，"地點列表"表示地圖中所有地點的名稱，"周圍人物"表示周圍人物的名稱
@@ -48,10 +47,27 @@ design_action_prompt = """根據提供"人物記憶"、"人物行程"、"觀察�
 {
     "action": "該動作描述",
     "location": "執行動作地點名稱",
-    "object": "互動物件名稱",
-    "person": "開啟談話對象名稱"
+    "object": "互動物件名稱"
 }
 不需要包含其他內容"""
+
+check_addition_action = """<人物記憶>{memory}</人物記憶>
+<人物行程>{schedule}</人物行程>
+<觀察事項>{observes}</觀察事項>
+<目前地點>{current_location}</目前地點>
+<當前時間>{current_time}</當前時間>
+<周圍人物>{nearby_people}</周圍人物>"""
+check_addition_action_prompt = """根據提供的"人物記憶"、"人物行程"、"觀察事項"、"當前時間"和"目前地點"判斷是否需要新增額外動作
+從["keep", "start_dialogue"]中選擇，並在"addtion"回傳選擇的結果
+若選擇保持原動作則"addtion"回傳"keep"，而"person"回傳"Nothing"
+若選擇選一個人開啟談話則"addtion"回傳"start_dialogue"，而"person"回傳人物名稱，只能選擇"周圍人物"中的一個人物
+以json回傳，回傳範例格式如下:
+{
+    "addtion": "",
+    "person": ""
+}
+不需要包含其他內容
+"""
 
 create_thought = """<人物記憶>{memory}</人物記憶>
 <觀察事項>{observes}</觀察事項>

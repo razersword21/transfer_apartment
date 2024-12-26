@@ -50,17 +50,41 @@ def main():
     location_list = map_manager.get_list_of_locations()
     all_location_object = map_manager.get_list_of_all_objects()
     
-    map_data, interactive_character_name, action = character1.character_action(location_list, all_location_object, map_manager.map_data)
-    map_manager.update_map_data(map_data)
+    if len(character1.status) == 0:
+        map_data, action = character1.character_action(location_list, all_location_object, map_manager.map_data)
+        map_manager.update_map_data(map_data)
 
-    print(f"更新後地圖資料 {map_manager.map_data}")
-    print(f"目前地點 {character1.current_location}")
-    print(f"人物記憶 {character1.memory_system.person_memory}")
+        additional_map_data, additional_action = character1.character_additional_action(map_manager.map_data)
+        map_manager.update_map_data(additional_map_data)
 
-    if interactive_character_name != "Nothing":
-        print(f"互動角色 {interactive_character_name}")
-        interactive_character  = character_dict[interactive_character_name]
-        dialogue_history = character1.character_dialogue(interactive_character, map_manager.map_data, [])
+        print(f"更新後地圖資料 {map_manager.map_data}")
+        print(f"目前地點 {character1.current_location}")
+        print(f"人物記憶 {character1.memory_system.person_memory}")
+
+        if additional_action["person"] != "Nothing" and additional_action["addtion"] == "start_dialogue":
+            print(f"互動角色 {action["person"]}")
+            interactive_character  = character_dict[additional_action["person"]]
+            start_person_stop_dialogue, interactive_person_stop_dialogue = False, False
+            dialogue_history = []
+
+            # 這邊會有問題 第3個人不能動作 和聊天內容怎麼寫到兩個人的記憶系統裡面
+            while(start_person_stop_dialogue == False and interactive_person_stop_dialogue == False):
+                dialogue_history, start_person_stop_dialogue = character1.character_dialogue(interactive_character, map_manager.map_data, dialogue_history)
+                print(f"對話歷史 {dialogue_history}")
+                dialogue_history, start_person_stop_dialogue = interactive_character.character_dialogue(character1, map_manager.map_data, dialogue_history)
+                print(f"對話歷史 {dialogue_history}")
+            print(f"對話結束")
+            character1.status = ""
+            interactive_character.status = ""
+
+        character1.character_thinking()
+        character1.check_adjust_schedule(map_manager.map_data)
+
+        # 還沒寫提示詞等內容
+        map_data, action = character1.character_reaction(event_content, location_list, all_location_object, map_manager.map_data)
+        map_manager.update_map_data(map_data)
+
+        # 還沒寫反思內容
 
 if __name__ == "__main__":
     main()

@@ -84,6 +84,24 @@ def design_action_method(personality, memory, temp_memory, schedule, observe, cu
     # print("執行時間:", times)
     return action
 
+def check_additional_action_method(personality, memory, schedule, observe, current_location, current_time, nearby_characters):
+    check_json_format_flag = False
+    nearby_people = copy.deepcopy(nearby_characters)
+    nearby_people.remove(personality["name"])
+
+    additional_action_prompt = check_addition_action.format(memory=memory, 
+                         schedule=schedule, 
+                         observes=observe, 
+                         current_location=current_location, 
+                         current_time=current_time, 
+                         nearby_people=nearby_people)+check_addition_action_prompt
+    while(check_json_format_flag == False):
+        additional_action, times = make_design(MODEL, TOKENIZER, personality, additional_action_prompt)
+        print("額外動作: {}".format(additional_action))
+        additional_action, check_json_format_flag = check_json_format(additional_action, check_json_format_flag)
+    # print("執行時間:", times)
+    return additional_action
+
 # 生成想法
 def thinking(person_information, observe, current_time):
     check_json_format_flag = False
