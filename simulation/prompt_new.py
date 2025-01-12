@@ -69,6 +69,27 @@ check_addition_action_prompt = """根據提供的"人物記憶"、"人物行程"
 不需要包含其他內容
 """
 
+design_reaction = """<人物記憶>{memory}</人物記憶>
+<人物行程>{schedule}</人物行程>
+<觀察事項>{observes}</觀察事項>
+<目前地點>{current_location}</目前地點>
+<當前時間>{current_time}</當前時間>
+<地點列表>{location_list}<地點列表>
+<地點物件資訊>{all_location_object}<地點物件資訊>
+<周圍人物>{nearby_people}</周圍人物>
+<事件內容>{event_content}</事件內容>"""
+design_reaction_prompt = """根據提供"人物記憶"、"人物行程"、"觀察事項"、"當前時間"和"當前地點"決定你對"事件內容"的反應
+其中要包含反應動作的地點和互動物件名稱，遵循以下"反應動作決定規則"
+<反應動作決定規則>
+- 反應動作從["keep", "new_action"]中選擇，若選擇保持原動作則"reaction"回傳"keep"，而"person"回傳"Nothing"，若選新動作則"reaction"回傳"new_action"
+<反應動作決定規則>
+"地點物件資訊"表示地圖中所有地點和各地點的物件資訊，"地點列表"表示地圖中所有地點的名稱，"周圍人物"表示周圍人物的名稱
+以json回傳，回傳範例格式如下:
+{
+    "reaction": ""
+}
+不需要包含其他內容"""
+
 create_thought = """<人物記憶>{memory}</人物記憶>
 <觀察事項>{observes}</觀察事項>
 <目前地點>{current_location}</目前地點>

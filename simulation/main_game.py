@@ -50,8 +50,16 @@ def main():
     location_list = map_manager.get_list_of_locations()
     all_location_object = map_manager.get_list_of_all_objects()
     
-    if len(character1.status) == 0:
-        map_data, action = character1.character_action(location_list, all_location_object, map_manager.map_data)
+    if len(character1.status) == 0: # while len(character1.status) == 0
+        map_data, action, is_change_location, path = character1.character_action(location_list, all_location_object, map_manager.map_data)
+        if is_change_location:
+            current_time = datetime.now().strftime("%Y-%m-%d %A %H:%M")
+            other_character = [character_dict[person] for person in character_dict.keys() if person != character1.name]
+            for character in other_character:
+                if character.current_location == path["source"]:
+                    character.memory_system.record_event(character1.name, current_time, "離開了"+path["source"], "[others]")
+                elif character.current_location == path["target"]:
+                    character.memory_system.record_event(character1.name, current_time, "來到了"+path["destination"]+"開始"+action['action'], "[others]")
         map_manager.update_map_data(map_data)
 
         additional_map_data, additional_action = character1.character_additional_action(map_manager.map_data)
@@ -67,7 +75,6 @@ def main():
             start_person_stop_dialogue, interactive_person_stop_dialogue = False, False
             dialogue_history = []
 
-            # 這邊會有問題 第3個人不能動作 和聊天內容怎麼寫到兩個人的記憶系統裡面
             while(start_person_stop_dialogue == False and interactive_person_stop_dialogue == False):
                 dialogue_history, start_person_stop_dialogue = character1.character_dialogue(interactive_character, map_manager.map_data, dialogue_history)
                 print(f"對話歷史 {dialogue_history}")
@@ -81,13 +88,14 @@ def main():
         character1.character_adjust_schedule(map_manager.map_data)
 
         # 還沒寫提示詞等內容
+        event_content = ""
         map_data, action = character1.character_reaction(event_content, location_list, all_location_object, map_manager.map_data)
         map_manager.update_map_data(map_data)
 
         # 反思內容
         relation_person_list = [character_dict[person] for person in character_dict.keys() if person != character1.name]
         for person in relation_person_list:
-            character1.character_relation_thinking(person)
+            character1.character_relation_thinking(person.name)
 
 if __name__ == "__main__":
     main()

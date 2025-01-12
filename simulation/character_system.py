@@ -16,9 +16,12 @@ class CharacterManager:
         self.current_object = character_data["current_object"]
         self.name = character_data['personality']["name"]
         self.status = ""
+        self.change_location_flag = False
         
     def character_action(self, location_list, all_location_object, all_map_data):
         """更新角色状态"""
+        self.change_location_flag = False
+        path = {}
         map_information = {
             "observe": all_map_data[self.current_location].get('observe', []),
             "location_list": location_list,
@@ -38,10 +41,13 @@ class CharacterManager:
                 time.sleep(1)
         
         # 2. 執行動作後更新角色狀態
-        map_information = self.update_character_location(action, map_information)
-        self.memory_system.record_event(None, current_time, action['action'], "[myself]")
+        if self.current_location != action['location']:
+            self.change_location_flag = True
+            path = {"source": self.current_location, "target": action['location']}
+        map_information = self.update_character_location_to_map(action, map_information)
+        self.memory_system.record_event("", current_time, action['action'], "[myself]")
 
-        return map_information, action
+        return map_information, action, self.change_location_flag, path
 
     def character_additional_action(self, all_map_data):
         """角色額外動作"""
@@ -56,7 +62,7 @@ class CharacterManager:
             return map_information, None
         else:
             action_content = "與"+additional_action['person']+"開啟對話"
-            self.memory_system.record_event(None, current_time, action_content, "[myself]")
+            self.memory_system.record_event("", current_time, action_content, "[myself]")
             map_information["all_map_data"][self.current_location]['observe'].append({self.name: action_content})
             return map_information, additional_action
 
@@ -64,10 +70,11 @@ class CharacterManager:
         """角色思考"""
         current_time = datetime.now().strftime("%Y-%m-%d %A %H:%M")
         think = self.decision.decision_thinking(self.memory_system.person_memory, self.current_location, current_time)
-        self.memory_system.record_event(None, current_time, think, "[myself]")
+        self.memory_system.record_event("", current_time, think, "[myself]")
     
     def character_reaction(self, event_content, location_list, all_location_object, all_map_data):
         """角色反應 : 觀察到事件 從預設動作列表中選擇動作 [keep, new_action]"""
+        current_time = datetime.now().strftime("%Y-%m-%d %A %H:%M")
         map_information = {
             "observe": all_map_data[self.current_location].get('observe', []),
             "location_list": location_list,
@@ -75,7 +82,14 @@ class CharacterManager:
             "nearby_characters": all_map_data[self.current_location].get('nearbyPersons', []),
             "all_map_data": all_map_data
         }
-        pass
+        reaction = self.decision.decision_reaction(self.memory_system.person_memory, self.current_location, current_time, map_information, event_content)
+        if reaction == "keep":
+            return map_information, None
+        else:
+            action_content = "因為"+event_content+"而生成新動作"
+            self.memory_system.record_event("", current_time, action_content, "[myself]")
+            map_information["all_map_data"][self.current_location]['observe'].append({self.name: action_content})
+            return map_information, reaction
     
     def character_dialogue(self, interactive_character, map_data, dialogue_history):
         """角色對話"""
@@ -108,10 +122,10 @@ class CharacterManager:
     def character_reflection_personality(self, memory):
         self.decision.personality_reflection(memory)
 
-    def character_relationship_thinking(self, person_name, memory):
-        relationship = self.decision.character_relation_thinking(person_name, memory)
+    def character_relationship_thinking(self, person_name):
+        self.decision.character_relation_thinking(person_name, self.memory_system.person_memory)
 
-    def update_character_location(self, action, map_data):
+    def update_character_location_to_map(self, action, map_data):
         """更新角色位置"""
         map_information = copy.deepcopy(map_data)
         clean_map_information = self.clean_character_observe(map_information)
@@ -164,7 +178,7 @@ class DecisionSystem:
         return action
     
     def additional_action(self, memory, current_location, current_time, map_information) -> Dict:
-        """附加行动"""
+        """附加行动 - 是否開始談話"""
         addition_action = check_additional_action_method(
             self.personality, 
             memory, 
@@ -174,10 +188,26 @@ class DecisionSystem:
             current_time, 
             map_information["nearby_characters"])
         return addition_action
+    
+    def decision_reaction(self, memory, current_location, current_time, map_information, event_content) -> Dict:
+        """决策反应"""
+        reaction = reaction_method(
+            self.personality,
+            memory,
+            self.current_schedule,
+            map_information["observe"],
+            current_location,
+            current_time,
+            map_information["location_list"],
+            map_information["all_location_object"],
+            map_information["nearby_characters"],
+            event_content
+        )
+        return reaction
 
-    def decision_thinking(self, memory, current_location, current_time) -> str:
+    def decision_thinking(self, memory, current_location, current_time,  map_information) -> str:
         """决策思考"""
-        think = design_thinking_method(
+        think = thinking_method(
             self.personality,
             memory,
             map_information["observe"],
@@ -188,11 +218,11 @@ class DecisionSystem:
     
     def check_need_adjust_schedule(self, memory, observe, current_time):
         """检查是否需要调整日程"""
-        return check_need_adjust_schedule_method(memory, self.current_schedule, observe, current_time)
+        return check_need_adjust_schedule_method(self.personality, memory, self.current_schedule, observe, current_time)
 
     def adjust_schedule(self, memory, observe, current_time):
         """调整日程"""
-        self.current_schedule = adjust_schedule_method(memory, self.current_schedule, observe, current_time)
+        self.current_schedule = adjust_schedule_method(self.personality, memory, self.current_schedule, observe, current_time)
 
     def create_dialogue(self, memory, interactive_character, observe, current_location, current_time, dialogue_history):
         """创建对话"""
@@ -218,7 +248,7 @@ class DecisionSystem:
         
         # 清除原本的关系
         self.personality["relationship"] = [r for r in relationship if relation_person.name not in r]  # 移除与relation_person的关系
-        
+        # 添加新的关系
         self.personality["relationship"].append({relation_person.name: personality_relation})
 
 class MemorySystem:
@@ -229,7 +259,7 @@ class MemorySystem:
         self.capacity = capacity
     
     def record_event(self, person_name:str, time: str, content: str, label: str):
-        if person_name is None:
+        if person_name == "":
             self.person_memory += time+" "+label+content+"\n"
         else:
             self.person_memory += time+" "+label+person_name+content+"\n"

@@ -102,6 +102,27 @@ def check_additional_action_method(personality, memory, schedule, observe, curre
     # print("執行時間:", times)
     return additional_action
 
+def reaction_method(personality, memory, temp_memory, schedule, observe, current_location, current_time, location_list, all_location_object, nearby_characters, event_content):
+    check_json_format_flag = False
+    nearby_people = copy.deepcopy(nearby_characters)
+    nearby_people.remove(personality["name"])
+
+    reaction_prompt = design_reaction.format(memory=memory,
+                         schedule=schedule, 
+                         observes=observe, 
+                         current_location=current_location, 
+                         current_time=current_time,
+                         location_list=location_list,
+                         all_location_object=all_location_object,
+                         nearby_people=nearby_people,
+                         event_content=event_content)+design_reaction_prompt
+    while(check_json_format_flag == False):
+        reaction, times = make_design(MODEL, TOKENIZER, personality, reaction_prompt)
+        print("反應: {}".format(reaction))
+        reaction, check_json_format_flag = check_json_format(reaction, check_json_format_flag)
+    # print("執行時間:", times)
+    return reaction
+
 # 生成想法
 def thinking(person_information, observe, current_time):
     check_json_format_flag = False
@@ -118,7 +139,7 @@ def thinking(person_information, observe, current_time):
     print("執行時間:", times)
     return think["thought"]
 
-def thinking_method(memory, observe, current_location, current_time):
+def thinking_method(personality, memory, observe, current_location, current_time):
     check_json_format_flag = False
     think_prompt = create_thought.format(memory=memory,
                          observes=observe,
@@ -148,7 +169,7 @@ def check_need_adjust_schedule(person_information, observe, current_time):
     print("執行時間:", times)
     return check_need_adjust["need_adjust"]
 
-def check_need_adjust_schedule_method(memory, schedule, observe, current_time):
+def check_need_adjust_schedule_method(personality, memory, schedule, observe, current_time):
     check_json_format_flag = False
     check_need_adjust_prompt = check_adjust.format(memory=memory,
                          schedule=schedule,
@@ -178,7 +199,7 @@ def adjsut_schedule(person_information, observe, current_time):
     print("執行時間:", times)
     return adjsuted_schedule["adjust_schedule"]
 
-def adjsut_schedule_method(memory, schedule, observe, current_time):
+def adjust_schedule_method(personality, memory, schedule, observe, current_time):
     check_json_format_flag = False
     adjsut_schedule_prompt = adjust_routine.format(memory=memory,
                          schedule=schedule,
