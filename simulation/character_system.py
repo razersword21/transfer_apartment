@@ -152,6 +152,17 @@ class CharacterManager:
             ]
         return map_information
 
+    def write_to_file(self, write_file_path, file_name):
+        file_data = {
+            "personality":self.decision.personality,
+            "schedule":self.decision.current_schedule,
+            "memory":self.memory_system.person_memory,
+            "current_location":self.current_location,
+            "current_object":self.current_object
+        }
+        with open(write_file_path+file_name, 'w', encoding='utf-8') as f:
+            json.dump(file_data, f, ensure_ascii=False)
+
 class DecisionSystem:
     def __init__(self, personality: Dict, schedule: Dict):
         self.personality = personality
@@ -253,7 +264,7 @@ class DecisionSystem:
 
 class MemorySystem:
     def __init__(self, memory: str, capacity: int = 100):
-        self.short_term: List[Dict] = []  # 短期记忆
+        # self.short_term: List[Dict] = []  # 短期记忆
         self.long_term: List[Dict] = []   # 长期记忆
         self.person_memory = memory  # 人物记忆
         self.capacity = capacity
@@ -309,3 +320,8 @@ class MapManager:
 
     def update_map_data(self, map_data):
         self.map_data = map_data
+
+    def write_to_file(self, write_file_path: str):
+        """将地图数据写入文件"""
+        with open(write_file_path+"map_information.json", "w", encoding="utf-8") as f:
+            json.dump(self.map_data, f, ensure_ascii=False, indent=4)

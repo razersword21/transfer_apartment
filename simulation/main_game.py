@@ -31,14 +31,21 @@ def default_setting():
 
     map_manager.map_default_setting(character1, character2, character3)
 
-    return map_manager, character1, character2, character3
+    global_queue = QueueManager()
+
+    return map_manager, character1, character2, character3,  global_queue
 
 def main():
-    map_manager, character1, character2, character3 = default_setting()
+    map_manager, character1, character2, character3, global_queue = default_setting()
     character_dict = {
         character1.name: character1,
         character2.name: character2,
         character3.name: character3
+    }
+    character_file_name_dict = {
+        character1.name: "p1_information.json",
+        character2.name: "p2_information.json",
+        character3.name: "p3_information.json"
     }
 
     # character1.decision.init_schedule(character1.memory.person_memory)
