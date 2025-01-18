@@ -277,8 +277,67 @@ class MemorySystem:
         # 管理记忆容量
         self._manage_memory_capacity()
     
-    def retrieve_relevant_memory(self, context: Dict) -> List[Dict]:
-        pass
+    def retrieve_relevant_memory(self, model, tokenizer, top_k: int = 3) -> str:
+        """
+        從記憶中檢索最相關的前k個記憶
+        Args:
+            memory (str): 原始記憶字符串
+            model: 語言模型
+            tokenizer: 分詞器
+            top_k (int): 需要返回的記憶數量
+        Returns:
+            str: 篩選後的記憶字符串
+        """
+        try:
+            # 如果記憶為空，直接返回空字符串
+            if not self.person_memory:
+                return ""
+                
+            # 如果記憶是字符串但不是JSON格式，直接返回
+            if isinstance(self.person_memory, str) and not self.person_memory.strip().startswith("{"):
+                return self.person_memory
+                
+            # 嘗試解析JSON
+            memory_dict = json.loads(self.person_memory) if isinstance(self.person_memory, str) else self.person_memory
+            
+            # 如果記憶數量小於等於 top_k，直接返回原始記憶
+            if len(memory_dict) <= top_k:
+                return self.person_memory
+                
+            latest_time = max(memory_dict.keys())
+            query = memory_dict[latest_time]
+            
+            # 為每條記憶評分
+            scored_memories = []
+            for time_stamp, memory_content in memory_dict.items():
+                # 使用模型評估重要性和相關性
+                prompt = f"""請評估以下記憶的重要性（1-10分）和與當前情境的相關性（1-10分）：
+    當前情境：{query}
+    待評估記憶：{memory_content}
+    請只回傳兩個數字，用逗號分隔，例如：8,7"""
+                
+                response, _ = make_design(model, tokenizer, {}, prompt)
+                try:
+                    importance, relevance = map(int, response.strip().split(','))
+                    score = (importance + relevance) / 20.0  # 正規化到 [0,1]
+                    scored_memories.append((score, time_stamp, memory_content))
+                except:
+                    scored_memories.append((0, time_stamp, memory_content))
+            
+            # 排序並選擇前k個記憶
+            scored_memories.sort(reverse=True)  # 按分數降序排序
+            selected_memories = scored_memories[:top_k]
+            
+            # 創建新的記憶字典，保持時間順序
+            selected_memories.sort(key=lambda x: x[1])  # 按時間戳排序
+            result_dict = {time_stamp: content 
+                        for _, time_stamp, content in selected_memories}
+            
+            return result_dict
+        
+        except Exception as e:
+            print(f"Error in retrieve_relevant_memory: {e}")
+            return ""
     
     def _manage_memory_capacity(self):
         """管理记忆容量 或 改成整理记忆"""

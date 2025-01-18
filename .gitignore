@@ -1,6 +1,8 @@
 testenv/
 __pycache__/
 *__pycache__/
+modelapi/modelenv/
+modelenv/
 .venv/
 simulation/cache/
 simulation/nc_workspace/

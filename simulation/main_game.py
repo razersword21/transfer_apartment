@@ -31,12 +31,10 @@ def default_setting():
 
     map_manager.map_default_setting(character1, character2, character3)
 
-    global_queue = QueueManager()
-
-    return map_manager, character1, character2, character3,  global_queue
+    return map_manager, character1, character2, character3
 
 def main():
-    map_manager, character1, character2, character3, global_queue = default_setting()
+    map_manager, character1, character2, character3= default_setting()
     character_dict = {
         character1.name: character1,
         character2.name: character2,

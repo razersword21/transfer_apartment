@@ -102,7 +102,7 @@ def check_additional_action_method(personality, memory, schedule, observe, curre
     # print("執行時間:", times)
     return additional_action
 
-def reaction_method(personality, memory, temp_memory, schedule, observe, current_location, current_time, location_list, all_location_object, nearby_characters, event_content):
+def reaction_method(personality, memory, schedule, observe, current_location, current_time, location_list, all_location_object, nearby_characters, event_content):
     check_json_format_flag = False
     nearby_people = copy.deepcopy(nearby_characters)
     nearby_people.remove(personality["name"])
@@ -116,6 +116,7 @@ def reaction_method(personality, memory, temp_memory, schedule, observe, current
                          all_location_object=all_location_object,
                          nearby_people=nearby_people,
                          event_content=event_content)+design_reaction_prompt
+    
     while(check_json_format_flag == False):
         reaction, times = make_design(MODEL, TOKENIZER, personality, reaction_prompt)
         print("反應: {}".format(reaction))
