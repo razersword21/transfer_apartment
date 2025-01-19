@@ -270,7 +270,7 @@ class MemorySystem:
     def __init__(self, memory: str, capacity: int = 100):
         self.long_term: List[Dict] = []   # Long-term memory storage
         self.person_memory = memory  # Current memory of the character
-        self.capacity = capacity  # Maximum capacity for memory
+        self.capacity = capacity  # Maximum capacity for memory i.e. the threshold of reflection
 
     def record_event(self, person_name: str, time: str, content: str, label: str):
         """
