@@ -45,7 +45,7 @@ def person_action(person_information, file_name, all_map_information):
     temp_memory = ""
     while(do_action == False):
         action = action_design(person_information, current_time, observe, all_location_object, location_list, all_map_information[person_information['current_location']]['nearbyPersons'], temp_memory)
-        do_action, action_message = check_action_valid(action, all_location_object, all_map_information)
+        do_action, action_message = check_action_valid(action, all_map_information)
         print(f"動作決定: {action}, {do_action}, {action_message}")
         if do_action == False:
             temp_memory += action["action"] + action_message

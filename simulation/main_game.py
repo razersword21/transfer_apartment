@@ -75,7 +75,7 @@ def main():
         print(f"人物記憶 {character1.memory_system.person_memory}")
 
         if additional_action["person"] != "Nothing" and additional_action["addtion"] == "start_dialogue":
-            print(f"互動角色 {action["person"]}")
+            print(f"互動角色 {action['person']}")
             interactive_character  = character_dict[additional_action["person"]]
             start_person_stop_dialogue, interactive_person_stop_dialogue = False, False
             dialogue_history = []
@@ -103,4 +103,6 @@ def main():
             character1.character_relation_thinking(person.name)
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
     main()
