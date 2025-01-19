@@ -68,7 +68,7 @@ def process_and_score_memories(memory_string, current_situation, model, tokenize
     return top_k_memories  # Return the top-k most relevant memories
 
 # Example usage
-def retirval_func(memory_string, current_situation) -> dict:
+def retirval_func(memory_string, query) -> dict:
     # Load the pre-trained model and tokenizer
     MODEL = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -78,7 +78,7 @@ def retirval_func(memory_string, current_situation) -> dict:
     TOKENIZER = AutoTokenizer.from_pretrained(model_name)  # Load the tokenizer
 
     # Process and rank the memories
-    result_dict = process_and_score_memories(memory_string, current_situation, MODEL, TOKENIZER)
+    result_dict = process_and_score_memories(memory_string, query, MODEL, TOKENIZER)
     print(result_dict)  # Print the results for debugging or analysis
     return result_dict  # Return the ranked memories
 """
