@@ -20,8 +20,14 @@ class Request(BaseModel):
     }
     prompt: str = "生成你現在的想法"
 
+class transfer_request(BaseModel):
+    prompt: str = "生成你現在的想法"
+
 class Response(BaseModel):
-    generate_dict: str #dict
+    generate_dict: dict
+
+class transfer_response(BaseModel):
+    generate_text: str 
 
 class HTTPErrorResult(BaseModel):
     result: int

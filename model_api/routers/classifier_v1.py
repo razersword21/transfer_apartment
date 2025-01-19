@@ -36,3 +36,15 @@ async def make_design_endp(request: Request):
     async with lock:
         generate_result = await event_loop.run_in_executor(None, make_design, MODEL, TOKENIZER, request.person_information, request.prompt, SYSTEM_PROMPT)
     return Response(generate_dict=generate_result)
+
+@router.post('/transfer_model', responses={
+    200: {'model': transfer_response},
+    400: {'model': HTTPErrorResult},
+    500: {'model': HTTPErrorResult},
+})
+@catch_error
+async def transfer_model_endp(request: transfer_request):
+    event_loop = get_event_loop()
+    async with lock:
+        generate_result = await event_loop.run_in_executor(None, transfer_model, MODEL, TOKENIZER, request.prompt)
+    return transfer_response(generate_text=generate_result)

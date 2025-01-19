@@ -12,6 +12,7 @@ class CharacterManager:
             character_data["schedule"]
         )
         self.memory_system = MemorySystem(memory=character_data["memory"], capacity=100)
+        
         self.current_location = character_data["current_location"]
         self.current_object = character_data["current_object"]
         self.name = character_data['personality']["name"]
@@ -19,7 +20,7 @@ class CharacterManager:
         self.change_location_flag = False
         
     def character_action(self, location_list, all_location_object, all_map_data):
-        """更新角色状态"""
+        """生成人物行動"""
         self.change_location_flag = False
         path = {}
         map_information = {
@@ -36,9 +37,9 @@ class CharacterManager:
         while not do_action:
             action = self.decision.decision_action(self.memory_system.person_memory, self.current_location, current_time, map_information, temp_memory)
             do_action, action_message = check_action_valid(action, map_information['all_map_data'])
+            # 如果動作無法執行，則將加入失敗原因到暫存記憶中，重新生成動作
             if do_action == False:
                 temp_memory += action["action"] + action_message
-                time.sleep(1)
         
         # 2. 執行動作後更新角色狀態
         if self.current_location != action['location']:
@@ -274,8 +275,6 @@ class MemorySystem:
             self.person_memory += time+" "+label+content+"\n"
         else:
             self.person_memory += time+" "+label+person_name+content+"\n"
-        # 管理记忆容量
-        self._manage_memory_capacity()
     
     def retrieve_relevant_memory(self, model, tokenizer, top_k: int = 3) -> str:
         """
