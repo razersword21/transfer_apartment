@@ -1,0 +1,23 @@
+{
+    "宿舍":{
+        "床": 3,
+        "書桌": 3,
+        "電腦": 2,
+        "電視": 2,
+        "observe":[],
+        "nearbyPersons":[]
+    },
+    "廁所":{
+        "廁所": 1,
+        "observe":[],
+        "nearbyPersons":[]
+    },
+    "餐廳":{
+        "椅子": 4,
+        "observe":[],
+        "nearbyPersons":[]
+    },
+    "其他區域":{
+        "observe":[]
+    }
+}

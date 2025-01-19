@@ -1,0 +1,6 @@
+testenv/
+__pycache__/
+*__pycache__/
+.venv/
+simulation/cache/
+simulation/nc_workspace/
