@@ -112,6 +112,8 @@ def all_person_action(write_file_path):
             #     json.dump(part_person_information, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
     # file_path 和 write_file_path只需要去config_new改就好
     
     # 生成行程表
