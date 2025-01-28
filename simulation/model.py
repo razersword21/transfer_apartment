@@ -65,7 +65,7 @@ def make_design_api(person_information: dict, prompt: str):
         "prompt": prompt
     }
     response = requests.post(
-        local_api_url+"/make_design", body=body, verify=False
+        local_api_url+"/make_design", json=body, verify=False
     )
     return response.json()['generate_dict']
 
@@ -74,6 +74,6 @@ def transfer_model_api(prompt: str):
         "prompt": prompt
     }
     response = requests.post(
-        local_api_url+"/transfer_model", body=body, verify=False
+        local_api_url+"/transfer_model", json=body, verify=False
     )
     return response.json()['generate_text']

@@ -9,13 +9,15 @@ logging.basicConfig(level=logging.INFO)
 
 # import intel_npu_acceleration_library
 
-MODEL = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    use_cache=True
-).eval()
-# print("Compile model for the NPU")
-# MODEL = torch.compile(MODEL, backend="npu")
-TOKENIZER = AutoTokenizer.from_pretrained(model_name, use_default_system_prompt=False)
+# MODEL = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     use_cache=True
+# ).eval()
+# # print("Compile model for the NPU")
+# # MODEL = torch.compile(MODEL, backend="npu")
+# TOKENIZER = AutoTokenizer.from_pretrained(model_name, use_default_system_prompt=False)
+MODEL = ""
+TOKENIZER = ""
 
 # simulation_test
 def schedule_create(person_information, todaytime):
@@ -236,9 +238,11 @@ def character_relation_thinking_method(personality, relation_person_name, origin
 def while_loop_method(check_json_format_flag, model, tokenizer, personality, prompt, required_fields):
     error_count = 0
     while(check_json_format_flag == False):
-        result, times = make_design(model, tokenizer, personality, prompt)
-        # result = make_design_api(personality, prompt)
+        # result, times = make_design(model, tokenizer, personality, prompt)
+        result = make_design_api(personality, prompt)
+        logging.warning(f"生成結果: {result} , {check_json_format_flag}")
         result, check_json_format_flag = check_json_format(result, check_json_format_flag)
+        logging.warning(f"生成結果: {result} , {required_fields}")
         check_json_format_flag = check_json_output(result, required_fields)
         if check_json_format_flag == False:
             error_count += 1

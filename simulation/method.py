@@ -25,27 +25,14 @@ def check_action_valid(action, map_information):
     if action['location'] in map_information:
         if action['object'] in map_information[action['location']]:
             if map_information[action['location']][action['object']] > 0:
-                if action['person'] != "Nothing":
-                    if action['person'] in map_information[action['location']]['nearbyPersons']:
-                        return True, " 動作有效"
-                    else:
-                        return False, f" {action['person']}沒有在附近"
-                else:
-                    return True, " 動作有效"
+                return True, " 動作有效\n"
             else:
-                return False, " 物件已經被占用"
+                return False, " 該物件已經被占用\n"
         elif action['object'] == "Nothing":
-            if action['person'] != "Nothing":
-                if action['person'] in map_information[action['location']]['nearbyPersons']:
-                    return True, " 動作有效"
-                else:
-                    return False, f" {action['person']}沒有在附近"
-            else:
-                return True, " 沒有使用物件"
+            return True, " 沒有使用物件\n"
         else:
-            return False, " 物件不存在"
-    
-    return False, " 地點不存在"
+            return False, " 物件不存在\n"
+    return True, " 該地點在戶外\n"
 
 # 確認輸出的json結果包含所有必要欄位
 def check_json_output(json_output, required_fields):

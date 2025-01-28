@@ -60,7 +60,7 @@ check_addition_action = """<人物記憶>{memory}</人物記憶>
 check_addition_action_prompt = """根據提供的"人物記憶"、"人物行程"、"觀察事項"、"當前時間"和"目前地點"判斷是否需要新增額外動作
 從["keep", "start_dialogue"]中選擇，並在"addtion"回傳選擇的結果
 若選擇保持原動作則"addtion"回傳"keep"，而"person"回傳"Nothing"
-若選擇選一個人開啟談話則"addtion"回傳"start_dialogue"，而"person"回傳人物名稱，只能選擇"周圍人物"中的一個人物
+若選擇選一個人開啟談話則"addtion"回傳"start_dialogue"，而"person"限制回傳人物名稱，只能選擇<周圍人物>中的一個人物名稱
 以json回傳，回傳範例格式如下:
 {
     "addtion": "",
@@ -136,7 +136,7 @@ check_adjust_prompt = """根據提供的所有資訊，判斷是否會影響到"
 </範例情況>
 以json回傳，回傳範例格式如下:
 {
-    "need_adjust": bool
+    "need_adjust": "true/false"
 }
 不需要包含其他內容"""
 

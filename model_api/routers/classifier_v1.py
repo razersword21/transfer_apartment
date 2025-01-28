@@ -5,7 +5,7 @@ import concurrent.futures
 from toolkit.lib import *
 from toolkit.method import *
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import json
+import torch
 import re
 
 if __name__ == 'routers.classifier_v1':
@@ -16,8 +16,11 @@ if __name__ == 'routers.classifier_v1':
     model_name = "Qwen/Qwen2.5-3B-Instruct"
     MODEL = AutoModelForCausalLM.from_pretrained(
         model_name,
-        use_cache=True
+        torch_dtype="auto",
+        device_map="auto"
     ).eval()
+    print(torch.cuda.is_available())
+    print(MODEL.device)
     TOKENIZER = AutoTokenizer.from_pretrained(model_name, use_default_system_prompt=False)
     SYSTEM_PROMPT = """<人物資訊>{person_information}</人物資訊>你是一位人物角色，人物背景資料參考"人物資訊"，根據該人物的"人物資訊"決定所有想法、行為和講話方式。"""
 

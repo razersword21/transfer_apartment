@@ -24,7 +24,7 @@ class transfer_request(BaseModel):
     prompt: str = "生成你現在的想法"
 
 class Response(BaseModel):
-    generate_dict: dict
+    generate_dict: str
 
 class transfer_response(BaseModel):
     generate_text: str 
