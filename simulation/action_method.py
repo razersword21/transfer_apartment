@@ -242,7 +242,7 @@ def while_loop_method(check_json_format_flag, model, tokenizer, personality, pro
         result = make_design_api(personality, prompt)
         logging.warning(f"生成結果: {result} , {check_json_format_flag}")
         result, check_json_format_flag = check_json_format(result, check_json_format_flag)
-        logging.warning(f"生成結果: {result} , {required_fields}")
+        logging.debug(f"生成結果: {result} , {required_fields} , {check_json_format_flag}")
         check_json_format_flag = check_json_output(result, required_fields)
         if check_json_format_flag == False:
             error_count += 1

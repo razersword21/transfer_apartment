@@ -35,13 +35,13 @@ class CharacterManager:
         temp_memory = event_content or ""
 
         current_time = datetime.now().strftime("%Y-%m-%d %A %H:%M")
-        while True:
+        while not do_action:
             action = self.decision.decision_action(self.memory_system.person_memory, self.current_location, current_time, map_information, temp_memory)
             do_action, action_message = check_action_valid(action, map_information['all_map_data'])
+            
             # 如果動作無法執行，則將加入失敗原因到暫存記憶中，重新生成動作
             if do_action == False:
-                break
-            temp_memory += action["action"] + action_message
+                temp_memory += action["action"] + action_message
         
         debug_print(f"人物行動 - 第一步 生成動作\n{action}", '紫色')
         
@@ -292,12 +292,13 @@ class DecisionSystem:
     def character_relation_thinking(self, relation_person, memory):
         """角色關係思考"""
         relationship = copy.deepcopy(self.personality["relationship"])
-        personality_relation = character_relation_thinking_method(self.personality, relation_person.name, self.personality["relationship"].get(relation_person, ""), memory)
+        origin_relation = next((r[relation_person] for r in relationship if relation_person in r), None)
+        personality_relation = character_relation_thinking_method(self.personality, relation_person, origin_relation, memory)
         
-        # 清除原本的关系
-        self.personality["relationship"] = [r for r in relationship if relation_person.name not in r]  # 移除与relation_person的关系
-        # 添加新的关系
-        self.personality["relationship"].append({relation_person.name: personality_relation})
+        # 清除原本的關係
+        self.personality["relationship"] = [r for r in relationship if relation_person not in r]  # 移除与relation_person的关系
+        # 添加新的關係
+        self.personality["relationship"].append({relation_person: personality_relation})
 
 class MemorySystem:
     def __init__(self, memory: str, capacity: int = 100):
