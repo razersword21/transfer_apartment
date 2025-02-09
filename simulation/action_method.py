@@ -75,7 +75,7 @@ def design_action_method(personality, memory, temp_memory, schedule, observe, cu
                          location_list=location_list,
                          all_location_object=all_location_object,
                          nearby_people=nearby_people)+design_action_prompt
-    required_fields = ["action", "location", "object"]
+    required_fields = ["action", "location", "object", "execution time"]
     action = while_loop_method(check_json_format_flag, MODEL, TOKENIZER, personality, action_prompt, required_fields)
     return action
 
